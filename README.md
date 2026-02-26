@@ -198,8 +198,10 @@ Instead of juggling Venmo requests, notes apps, and chaotic group chats, roommat
 ## Team Housemates 🙌
 
 **Developers**
-- [Add names here]
+- Sragvee Satluri
+- Ira Mishra
+- Rishith Bobburu
+- Devashri Venugopal
 
 **Project Manager**
 - Noel Emmanuel
-

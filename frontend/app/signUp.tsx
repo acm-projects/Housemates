@@ -11,7 +11,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-
+import { 
+  HomeIcon, 
+  ChecklistIcon, 
+  ShoppingBagIcon, 
+  CalendarIcon, 
+  ExpensesIcon 
+} from './icons';
 // --- Components ---
 
 function SignUpForm({
@@ -93,11 +99,11 @@ type TabItem = {
 };
 
 const tabs: TabItem[] = [
-  { id: 'list', icon: '☰' },
-  { id: 'wallet', icon: '👜' },
-  { id: 'home', icon: '🏠' },
-  { id: 'calendar', icon: '📅' },
-  { id: 'flag', icon: '🚩' },
+  { id: 'list', icon: <ChecklistIcon size={24} color="#2D2D4E" /> },
+  { id: 'wallet', icon: <ShoppingBagIcon size={24} color="#2D2D4E" /> },
+  { id: 'home', icon: <HomeIcon size={24} color="#2D2D4E" /> },
+  { id: 'calendar', icon: <CalendarIcon size={24} color="#2D2D4E" /> },
+  { id: 'flag', icon: <ExpensesIcon size={24} color="#2D2D4E" /> },
 ];
 
 function BottomTabBar({

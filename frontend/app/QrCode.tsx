@@ -7,6 +7,13 @@ import {
   SafeAreaView,
   Dimensions,
 } from 'react-native';
+import { 
+  HomeIcon, 
+  ChecklistIcon, 
+  ShoppingBagIcon, 
+  CalendarIcon, 
+  ExpensesIcon 
+} from './icons';
 import QRCode from 'react-native-qrcode-svg';
 
 const { width } = Dimensions.get('window');

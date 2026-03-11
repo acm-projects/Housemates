@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Housemates backend API
+
+Globals:
+  Function:
+    Runtime: nodejs24.x
+    Timeout: 10
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref TableName
+        COGNITO_USER_POOL_ARN: !Ref CognitoUserPoolArn
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+  ProjectName:
+    Type: String
+    Default: housemates
+  TableName:
+    Type: String
+    Description: DynamoDB table name
+  TableArn:
+    Type: String
+    Description: DynamoDB table ARN
+  CognitoUserPoolArn:
+    Type: String
+    Description: Cognito User Pool ARN
+
+Resources:
+  HousematesApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub "${ProjectName}-api"
+      Description: "500 lambda functions"
+      StageName: !Ref Environment
+      # TODO: Add Auth authorization
+      # Auth:
+      #   DefaultAuthorizer: CognitoAuthorizer
+      #   Authorizers:
+      #     CognitoAuthorizer:
+      #       UserPoolArn: !Ref CognitoUserPoolArn
+
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-hello-world"
+      CodeUri: functions/hello-world/
+      Handler: handler.handler
+      Description: Hello world Lambda for API Gateway
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        HelloGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /hello
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        EntryPoints:
+          - handler.ts
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${HousematesApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+  HelloWorldFunctionArn:
+    Description: Hello World Lambda Function ARN
+    Value: !GetAtt HelloWorldFunction.Arn

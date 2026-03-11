@@ -1,0 +1,19 @@
+# Copy this file to samconfig.toml and fill in your values.
+# samconfig.toml is gitignored — do not commit it.
+
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "housemates-dev"
+resolve_s3 = true
+s3_prefix = "housemates"
+region = "us-east-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = [
+  "Environment=dev",
+  "ProjectName=housemates",
+  "TableName=<your-dynamodb-table-name>",
+  "TableArn=<your-dynamodb-table-arn>",
+  "CognitoUserPoolArn=<your-cognito-user-pool-arn>",
+]

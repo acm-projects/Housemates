@@ -10,33 +10,42 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-
+import { 
+  HomeIcon, 
+  ChecklistIcon, 
+  ShoppingBagIcon, 
+  CalendarIcon, 
+  ExpensesIcon 
+} from './icons';
 // --- Types ---
 type Props = {
   onBack?: () => void;
-  onJoinWithQR?: () => void;
-  onJoinHouse?: (data: { password: string }) => void;
-  qrPreviewValue?: string;
+  onAddHousemate?: () => void;
+  onAddHouse?: (data: { houseName: string; password: string }) => void;
 };
 
 // --- Main Screen ---
 
-export default function JoinHouseScreen({
+export default function AddHouseScreen({
   onBack = () => {},
-  onJoinWithQR = () => {},
-  onJoinHouse = () => {},
-  qrPreviewValue = 'join-house-qr',
+  onAddHousemate = () => {},
+  onAddHouse = () => {},
 }: Props) {
+  const [houseName, setHouseName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleJoinHouse = () => {
+  const handleAddHouse = () => {
+    if (!houseName.trim()) {
+      setError('Please enter a name for your house.');
+      return;
+    }
     if (password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
     }
     setError('');
-    onJoinHouse({ password });
+    onAddHouse({ houseName, password });
   };
 
   return (
@@ -53,7 +62,7 @@ export default function JoinHouseScreen({
         >
           <Text style={styles.backArrow}>{'◀︎'}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Join a House</Text>
+        <Text style={styles.title}>Add a House</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -68,54 +77,69 @@ export default function JoinHouseScreen({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <View style={styles.card}>
 
-          {/* QR Code Card */}
-          <TouchableOpacity
-            style={styles.qrCard}
-            onPress={onJoinWithQR}
-            accessibilityRole="button"
-            accessibilityLabel="Join with QR code"
-            activeOpacity={0.8}
-          >
-            <Text style={styles.qrText}>Join with QR code</Text>
-            {/* Placeholder QR box — replace with a real scanner trigger */}
-            <View style={styles.qrPlaceholder}>
-              <Text style={styles.qrPlaceholderText}>{'▦'}</Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* Password Card */}
-          <View style={styles.passwordCard}>
+            {/* House Name Input */}
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
-                placeholder="Or enter a password"
+                placeholder="Name your house!"
+                placeholderTextColor="#4A5090"
+                value={houseName}
+                onChangeText={setHouseName}
+                autoCapitalize="words"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+              <View style={styles.inputLine} />
+            </View>
+
+            {/* Add House Members */}
+            <TouchableOpacity
+              style={styles.inputContainer}
+              onPress={onAddHousemate}
+              accessibilityRole="button"
+              accessibilityLabel="Add house members"
+              activeOpacity={0.7}
+            >
+              <View style={styles.membersRow}>
+                <Text style={styles.placeholderText}>Add house members</Text>
+                <Text style={styles.addIconText}>⊕</Text>
+              </View>
+              <View style={styles.inputLine} />
+            </TouchableOpacity>
+
+            {/* Password Input */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Create a password for your house"
                 placeholderTextColor="#4A5090"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
                 autoCapitalize="none"
                 returnKeyType="done"
-                onSubmitEditing={handleJoinHouse}
+                onSubmitEditing={handleAddHouse}
               />
               <View style={styles.inputLine} />
             </View>
+
+            {/* Validation error */}
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            {/* Add House Button */}
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleAddHouse}
+              accessibilityRole="button"
+              accessibilityLabel="Add house"
+              activeOpacity={0.8}
+            >
+              <Text style={styles.addButtonText}>Add house</Text>
+            </TouchableOpacity>
+
           </View>
-
-          {/* Validation error */}
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          {/* Join House Button */}
-          <TouchableOpacity
-            style={styles.joinButton}
-            onPress={handleJoinHouse}
-            accessibilityRole="button"
-            accessibilityLabel="Join House"
-            activeOpacity={0.8}
-          >
-            <Text style={styles.joinButtonText}>Join House!</Text>
-          </TouchableOpacity>
-
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -164,49 +188,20 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingTop: 24,
     paddingBottom: 40,
   },
 
-  // QR Card
-  qrCard: {
+  // Card
+  card: {
     backgroundColor: '#C8D0F4',
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  qrText: {
-    fontSize: 16,
-    color: '#1A1A2E',
-    fontWeight: '400',
-    fontFamily: 'serif',
-  },
-  qrPlaceholder: {
-    width: 60,
-    height: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#C8D0F4',
-  },
-  qrPlaceholderText: {
-    fontSize: 48,
-    color: '#1A1A2E',
-  },
-
-  // Password Card
-  passwordCard: {
-    backgroundColor: '#C8D0F4',
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    marginBottom: 32,
+    borderRadius: 20,
+    padding: 24,
+    paddingTop: 28,
+    paddingBottom: 32,
   },
   inputContainer: {
-    width: '100%',
+    marginBottom: 24,
   },
   input: {
     fontSize: 16,
@@ -220,6 +215,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#4A5090',
     marginTop: 4,
   },
+  membersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: '#4A5090',
+    fontFamily: 'serif',
+  },
+  addIconText: {
+    fontSize: 22,
+    color: '#4A5090',
+    marginRight: 4,
+  },
 
   // Error
   errorText: {
@@ -229,15 +240,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // Join Button
-  joinButton: {
+  // Button
+  addButton: {
     backgroundColor: '#4A5090',
     borderRadius: 24,
     paddingVertical: 14,
-    paddingHorizontal: 48,
+    paddingHorizontal: 40,
     alignSelf: 'center',
+    marginTop: 8,
   },
-  joinButtonText: {
+  addButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',

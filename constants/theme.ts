@@ -1,21 +1,19 @@
 export const colors = {
-  pageBackground: '#ececf2',
-  panelBackground: '#f2f3f8',
-  title: '#232633',
-  subtitle: '#2f3040',
-  mutedText: '#6e7185',
-  taskBorder: '#1790ee',
-  navBackground: 'rgba(220, 220, 216, 0.95)',
-  white: '#ffffff',
-  accent: '#f68b3d',
-};
-
-export const shadows = {
-  soft: {
-    shadowColor: '#6b6b83',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 5,
-  },
+  screenBg: "#E8EAF3",
+  primary: "#5F6FAE",
+  primaryDark: "#4E5F9E",
+  primarySoft: "#B8C6EA",
+  card: "#B5C1E6",
+  textMain: "#242833",
+  textSubtle: "#666E85",
+  chipBg: "#B8C6EA",
+  chipActive: "#5A6BAA",
+  white: "#FFFFFF",
+  tagDoneBg: "#BFE28C",
+  tagUrgentBg: "#F5DFE8",
+  tagTodoBg: "#C9D9FF",
+  tagTextDone: "#4F7B2A",
+  tagTextUrgent: "#F05E4D",
+  tagTextTodo: "#3560C8",
+  shadow: "rgba(53, 63, 106, 0.18)",
 };

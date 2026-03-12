@@ -1,11 +1,21 @@
 {
   "expo": {
-    "name": "Home Page",
-    "slug": "home-page",
-    "scheme": "homepage",
-    "plugins": [
-      "expo-router"
-    ],
+    "name": "Task Page",
+    "slug": "task-page",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "taskpage",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true
     }

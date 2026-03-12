@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Home Page",
+    "slug": "home-page",
+    "scheme": "homepage",
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

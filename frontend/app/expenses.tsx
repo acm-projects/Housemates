@@ -1,4 +1,5 @@
 import * as React from "react";
+import { apiPost } from "@/utils/api";
 import {
   View,
   Text,
@@ -9,19 +10,21 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { 
-  HomeIcon, 
-  ChecklistIcon, 
-  ShoppingBagIcon, 
-  CalendarIcon, 
-  ExpensesIcon 
+import {
+  HomeIcon,
+  ChecklistIcon,
+  ShoppingBagIcon,
+  CalendarIcon,
+  ExpensesIcon,
+  BellIcon
 } from './icons';
+
 // --- Types ---
 type SplitMember = {
   id: string;
   name: string;
-  avatar: string; // uri or require()
-  amount: number; // negative = owes, positive = owed
+  avatar: string;
+  amount: number;
 };
 
 type Expense = {
@@ -48,49 +51,63 @@ const groupedExpenses: GroupedExpenses[] = [
   {
     date: 'February 16, 2026',
     expenses: [
-      { id: '1', icon: 'https://i.pravatar.cc/40?img=10', amount: 31.0, description: 'Nuclear Bomb!' },
-      { id: '2', icon: 'https://i.pravatar.cc/40?img=10', amount: 31.0, description: 'Nuclear Bomb!' },
+      { id: '1', icon: 'https://i.pravatar.cc/40?img=10', amount: 31.0, description: 'Grocery Run' },
+      { id: '2', icon: 'https://i.pravatar.cc/40?img=11', amount: 18.5, description: 'Streaming Service' },
     ],
   },
   {
     date: 'February 14, 2026',
     expenses: [
-      { id: '3', icon: 'https://i.pravatar.cc/40?img=10', amount: 31.0, description: 'Nuclear Bomb!' },
-      { id: '4', icon: 'https://i.pravatar.cc/40?img=10', amount: 31.0, description: 'Nuclear Bomb!' },
+      { id: '3', icon: 'https://i.pravatar.cc/40?img=12', amount: 62.0, description: 'Electricity Bill' },
+      { id: '4', icon: 'https://i.pravatar.cc/40?img=13', amount: 14.0, description: 'Cleaning Supplies' },
     ],
   },
 ];
 
 // --- Components ---
+async function addExpense(data: { amount: number; description: string }) {
+  try {
+    const result = await apiPost("/expenses/add", data);
+    console.log(result);
+  } catch (err) {
+    console.error("Error adding expense:", err);
+  }
+}
 
 function SplitTableCard({ members }: { members: SplitMember[] }) {
+  const totalOwed = members.filter(m => m.amount > 0).reduce((a, m) => a + m.amount, 0);
+  const totalOwe = Math.abs(members.filter(m => m.amount < 0 && m.name !== 'You').reduce((a, m) => a + m.amount, 0));
+
   return (
     <View style={styles.splitCard}>
-      <Text style={styles.splitTitle}>Split Table</Text>
-      <View style={styles.membersRow}>
-        {members.map((member) => (
-          <View key={member.id} style={styles.memberItem}>
-            <View style={styles.avatarContainer}>
-              <Image source={{ uri: member.avatar }} style={styles.avatar} />
-              <View
-                style={[
-                  styles.arrowBadge,
-                  { backgroundColor: member.amount >= 0 ? '#D4E89C' : '#F5B0B0' },
-                ]}
-              >
-                <Text style={styles.arrowText}>{member.amount >= 0 ? '↑' : '↓'}</Text>
-              </View>
-            </View>
-            <Text
-              style={[
-                styles.memberAmount,
-                { color: member.amount >= 0 ? '#A8D5A2' : '#F5B0B0' },
-              ]}
-            >
-              {member.amount >= 0 ? `$${member.amount.toFixed(2)}` : `-$${Math.abs(member.amount).toFixed(2)}`}
-            </Text>
+      <View style={styles.splitCardHeader}>
+        <Text style={styles.splitTitle}>Split Table</Text>
+        <View style={styles.splitSummaryRow}>
+          <View style={styles.splitSummaryChip}>
+            <View style={[styles.summaryDot, { backgroundColor: COLORS.primary }]} />
+            <Text style={styles.splitSummaryText}>+${totalOwed.toFixed(0)} owed to you</Text>
           </View>
-        ))}
+        </View>
+      </View>
+
+      <View style={styles.membersRow}>
+        {members.map((member) => {
+          const isPositive = member.amount >= 0;
+          return (
+            <View key={member.id} style={styles.memberItem}>
+              <View style={styles.avatarWrapper}>
+                <Image source={{ uri: member.avatar }} style={styles.avatar} />
+                <View style={[styles.statusBadge, { backgroundColor: isPositive ? COLORS.primary : COLORS.accent }]}>
+                  <Text style={styles.statusBadgeText}>{isPositive ? '↑' : '↓'}</Text>
+                </View>
+              </View>
+              <Text style={styles.memberName}>{member.name}</Text>
+              <Text style={[styles.memberAmount, { color: isPositive ? COLORS.primary : COLORS.accent }]}>
+                {isPositive ? `+$${member.amount}` : `-$${Math.abs(member.amount)}`}
+              </Text>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -99,21 +116,28 @@ function SplitTableCard({ members }: { members: SplitMember[] }) {
 function ExpenseItem({ expense }: { expense: Expense }) {
   return (
     <View style={styles.expenseItem}>
-      <View style={styles.expenseIcon}>
+      <View style={styles.expenseIconBox}>
         <Image source={{ uri: expense.icon }} style={styles.expenseIconImage} />
       </View>
       <View style={styles.expenseInfo}>
-        <Text style={styles.expenseAmount}>${expense.amount.toFixed(2)}</Text>
         <Text style={styles.expenseDescription}>{expense.description}</Text>
+        <Text style={styles.expenseDate}>Shared equally</Text>
+      </View>
+      <View style={styles.expenseAmountBox}>
+        <Text style={styles.expenseAmount}>${expense.amount.toFixed(2)}</Text>
       </View>
     </View>
   );
 }
 
 function ExpenseDateGroup({ group }: { group: GroupedExpenses }) {
+  const total = group.expenses.reduce((a, e) => a + e.amount, 0);
   return (
     <View style={styles.dateGroup}>
-      <Text style={styles.dateHeader}>{group.date}</Text>
+      <View style={styles.dateHeaderRow}>
+        <Text style={styles.dateHeader}>{group.date}</Text>
+        <Text style={styles.dateTotal}>${total.toFixed(2)}</Text>
+      </View>
       {group.expenses.map((expense) => (
         <ExpenseItem key={expense.id} expense={expense} />
       ))}
@@ -121,26 +145,17 @@ function ExpenseDateGroup({ group }: { group: GroupedExpenses }) {
   );
 }
 
-type TabItem = {
-  id: string;
-  icon: string;
-};
-
+// --- Tab Bar ---
+type TabItem = { id: string; icon: React.ReactNode };
 const tabs: TabItem[] = [
-  { id: 'list', icon: <ChecklistIcon size={24} color="#2D2D4E" /> },
-  { id: 'wallet', icon: <ShoppingBagIcon size={24} color="#2D2D4E" /> },
-  { id: 'home', icon: <HomeIcon size={24} color="#2D2D4E" /> },
-  { id: 'calendar', icon: <CalendarIcon size={24} color="#2D2D4E" /> },
-  { id: 'flag', icon: <ExpensesIcon size={24} color="#2D2D4E" /> },
+  { id: 'list', icon: <ChecklistIcon size={24} color="#678D58" /> },
+  { id: 'wallet', icon: <ShoppingBagIcon size={24} color="#678D58" /> },
+  { id: 'home', icon: <HomeIcon size={24} color="#678D58" /> },
+  { id: 'calendar', icon: <CalendarIcon size={24} color="#678D58" /> },
+  { id: 'flag', icon: <ExpensesIcon size={24} color="#678D58" /> },
 ];
 
-function BottomTabBar({
-  activeTab,
-  onTabPress,
-}: {
-  activeTab: string;
-  onTabPress: (id: string) => void;
-}) {
+function BottomTabBar({ activeTab, onTabPress }: { activeTab: string; onTabPress: (id: string) => void }) {
   return (
     <View style={styles.tabBar}>
       {tabs.map((tab) => (
@@ -149,6 +164,7 @@ function BottomTabBar({
           style={[styles.tabItem, activeTab === tab.id && styles.tabItemActive]}
           onPress={() => onTabPress(tab.id)}
         >
+          {activeTab === tab.id && <View style={styles.tabActiveIndicator} />}
           <Text style={styles.tabIcon}>{tab.icon}</Text>
         </TouchableOpacity>
       ))}
@@ -157,7 +173,6 @@ function BottomTabBar({
 }
 
 // --- Main Screen ---
-
 export default function ExpensesScreen({
   onBack,
   onSplitMoney,
@@ -165,7 +180,7 @@ export default function ExpensesScreen({
   onBack?: () => void;
   onSplitMoney?: () => void;
 }) {
-  const [activeTab, setActiveTab] = React.useState('home');
+  const [activeTab, setActiveTab] = React.useState('flag');
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -174,13 +189,21 @@ export default function ExpensesScreen({
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backArrow}>{'◀︎-'}</Text>
+          <View style={styles.backButtonInner}>
+            <Text style={styles.backArrow}>←</Text>
+          </View>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Expenses</Text>
-        <TouchableOpacity style={styles.bellButton}>
-          <Text style={styles.bellIcon}>🔔</Text>
+        <View>
+          <Text style={styles.headerTitle}>Expenses</Text>
+          <Text style={styles.headerSubtitle}>March 2026</Text>
+        </View>
+        <TouchableOpacity style={styles.notifButton}>
+          <BellIcon size={22} color={COLORS.textDark} />
+          <View style={styles.notifDot} />
         </TouchableOpacity>
       </View>
+
+      <View style={styles.accentBar} />
 
       {/* Content */}
       <ScrollView
@@ -190,16 +213,17 @@ export default function ExpensesScreen({
       >
         <SplitTableCard members={splitMembers} />
 
+        <Text style={styles.sectionTitle}>Recent Expenses</Text>
+
         {groupedExpenses.map((group) => (
           <ExpenseDateGroup key={group.date} group={group} />
         ))}
 
-        {/* Spacer for FAB */}
-        <View style={{ height: 100 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
 
       {/* Split Money FAB */}
-      <TouchableOpacity style={styles.splitMoneyButton} onPress={onSplitMoney}>
+      <TouchableOpacity style={styles.splitMoneyButton} onPress={onSplitMoney} activeOpacity={0.85}>
         <View style={styles.splitMoneyIconCircle}>
           <Text style={styles.splitMoneyIconText}>$</Text>
         </View>
@@ -212,72 +236,156 @@ export default function ExpensesScreen({
   );
 }
 
-// --- Styles ---
+// --- Colors ---
 const COLORS = {
-  bg: '#E8E8F0',
-  cardBg: '#C5C5D8',
-  expenseBg: '#CBCBE6',
-  primary: '#6B6B9E',
-  textDark: '#2D2D4E',
-  textMuted: '#6B6B8D',
+  bg: 'DBF9F4',
+  cardBg: '#FFFFFF',
+  primary: '#678D58',
+  secondary: '#A6C48A',
+  accent: '#DD9787',
+  textDark: '#2C3A22',
+  textMuted: '#8A9E7A',
+  border: '#D4C4A0',
   white: '#FFFFFF',
-  border: '#5A5A8A',
 };
 
+// --- Styles ---
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: COLORS.bg,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingTop: 18,
+    paddingBottom: 12,
   },
-  backButton: {
-    padding: 4,
+  backButton: {},
+  backButtonInner: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 3,
+    elevation: 2,
   },
   backArrow: {
-    fontSize: 20,
-    color: COLORS.textDark,
+    fontSize: 18,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: '800',
     color: COLORS.textDark,
-    fontFamily: 'serif',
+    letterSpacing: -0.4,
+    textAlign: 'center',
   },
-  bellButton: {
+  headerSubtitle: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    marginTop: 1,
+  },
+  notifButton: {
+    position: 'relative',
     padding: 4,
   },
-  bellIcon: {
-    fontSize: 20,
+
+  notifDot: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.accent,
+    borderWidth: 1.5,
+    borderColor: COLORS.bg,
   },
-  scrollView: {
-    flex: 1,
+
+  accentBar: {
+    height: 3,
+    backgroundColor: COLORS.secondary,
+    marginHorizontal: 20,
+    borderRadius: 2,
+    marginBottom: 4,
   },
+
+  scrollView: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 16,
+  },
+
+  // Section title
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    letterSpacing: -0.2,
+    marginBottom: 12,
+    marginTop: 4,
   },
 
   // Split Table Card
   splitCard: {
     backgroundColor: COLORS.cardBg,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    marginBottom: 20,
+    marginBottom: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(103, 141, 88, 0.12)',
+    shadowColor: '#2C3A22',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  splitCardHeader: {
+    marginBottom: 16,
   },
   splitTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     color: COLORS.textDark,
-    marginBottom: 16,
-    fontFamily: 'serif',
+    letterSpacing: -0.3,
+    marginBottom: 6,
+  },
+  splitSummaryRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  splitSummaryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: `${COLORS.primary}15`,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  summaryDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  splitSummaryText: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   membersRow: {
     flexDirection: 'row',
@@ -285,103 +393,137 @@ const styles = StyleSheet.create({
   },
   memberItem: {
     alignItems: 'center',
+    gap: 4,
   },
-  avatarContainer: {
+  avatarWrapper: {
     position: 'relative',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: COLORS.border,
   },
-  arrowBadge: {
+  statusBadge: {
     position: 'absolute',
     bottom: -2,
-    left: -2,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.white,
   },
-  arrowText: {
-    fontSize: 12,
-    fontWeight: '700',
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.white,
+  },
+  memberName: {
+    fontSize: 11,
+    fontWeight: '600',
     color: COLORS.textDark,
   },
   memberAmount: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
   },
 
   // Date Groups
-  dateGroup: {
-    marginBottom: 16,
+  dateGroup: { marginBottom: 18 },
+  dateHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   dateHeader: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+    letterSpacing: 0.3,
+  },
+  dateTotal: {
+    fontSize: 13,
+    fontWeight: '700',
     color: COLORS.textDark,
-    marginBottom: 12,
-    fontFamily: 'serif',
   },
 
   // Expense Item
   expenseItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.expenseBg,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-  },
-  expenseIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     backgroundColor: COLORS.cardBg,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(103, 141, 88, 0.08)',
+    shadowColor: '#2C3A22',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  expenseIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: `${COLORS.secondary}30`,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: 12,
     overflow: 'hidden',
   },
   expenseIconImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
   },
-  expenseInfo: {
-    flex: 1,
-  },
-  expenseAmount: {
-    fontSize: 16,
-    fontWeight: '700',
+  expenseInfo: { flex: 1 },
+  expenseDescription: {
+    fontSize: 15,
+    fontWeight: '600',
     color: COLORS.textDark,
   },
-  expenseDescription: {
-    fontSize: 13,
+  expenseDate: {
+    fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 2,
+  },
+  expenseAmountBox: {
+    backgroundColor: `${COLORS.primary}12`,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  expenseAmount: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
 
   // Split Money FAB
   splitMoneyButton: {
     position: 'absolute',
-    bottom: 80,
-    right: 24,
+    bottom: 82,
+    right: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    borderRadius: 30,
+    backgroundColor: COLORS.accent,
+    borderRadius: 28,
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    paddingLeft: 10,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
+    paddingHorizontal: 18,
+    paddingLeft: 8,
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
   },
   splitMoneyIconCircle: {
     width: 36,
@@ -394,32 +536,45 @@ const styles = StyleSheet.create({
   },
   splitMoneyIconText: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.primary,
+    fontWeight: '800',
+    color: COLORS.accent,
   },
   splitMoneyText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: COLORS.white,
   },
 
-  // Bottom Tab Bar
+  // Tab Bar
   tabBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
     backgroundColor: COLORS.cardBg,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 8,
   },
   tabItem: {
     padding: 8,
+    alignItems: 'center',
+    position: 'relative',
   },
-  tabItemActive: {
-    opacity: 1,
+  tabItemActive: {},
+  tabActiveIndicator: {
+    position: 'absolute',
+    top: 2,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.accent,
   },
-  tabIcon: {
-    fontSize: 22,
-  },
+  tabIcon: { fontSize: 22 },
 });

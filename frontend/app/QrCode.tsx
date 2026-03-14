@@ -31,7 +31,7 @@ const COLORS = {
   cardBg: '#D1DAE6', 
   primary: '#0A2239',
   secondary: '#176087',
-  accent: '#ADB6C4',//
+  accent: '#0A2239',//
   textDark: '#132E32',
   textMuted: '#98AAC5',
   border: '#3590F3',

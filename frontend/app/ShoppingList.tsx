@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   // Progress bar — track wraps fill
   progressTrack: {
     height:          6,
-    backgroundColor: "#E8DDCC",
+    backgroundColor: "#176087",
     borderRadius:    6,
     overflow:        "hidden",
     marginBottom:    12

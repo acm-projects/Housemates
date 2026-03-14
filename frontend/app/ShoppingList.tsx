@@ -33,15 +33,20 @@ type TabItem = { id: string; icon: React.ReactNode }
 
 // --- Colors ---
 const COLORS = {
-  bg:      "DBF9F4",
-  card:    "#FFFFFF",
-  primary: "#678D58",
-  secondary: "#A6C48A",
-  accent:  "#DD9787",
-  text:    "#2C3A22",
-  muted:   "#8A9E7A",
-  border:  "#D4C4A0"
-}
+  bg: '#FDFDFF',
+  cardBg: '#D1DAE6', 
+  primary: '#0A2239',
+  secondary: '#176087',
+  accent: '#ADB6C4',//
+  textDark: '#132E32',
+  textMuted: '#98AAC5',
+  border: '#3590F3',
+  borderFocus: '#ADB6C4',
+  stepInactive: '#ADB6C4',
+  white: '#FFFFFF',
+
+};
+
 
 // --- Tab Bar ---
 const tabs: TabItem[] = [
@@ -219,7 +224,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize:   24,
     fontWeight: "800",
-    color:      COLORS.text
+    color:      COLORS.textDark
   },
 
   accentBar: {
@@ -237,7 +242,7 @@ const styles = StyleSheet.create({
   },
 
   groupCard: {
-    backgroundColor: COLORS.card,
+    backgroundColor: COLORS.cardBg,
     borderRadius:    16,
     padding:         16,
     marginBottom:    16,
@@ -259,12 +264,12 @@ const styles = StyleSheet.create({
   groupTitle: {
     fontSize:   16,
     fontWeight: "700",
-    color:      COLORS.text
+    color:      COLORS.textDark
   },
   groupProgress: {
     fontSize:   13,
     fontWeight: "600",
-    color:      COLORS.muted
+    color:      COLORS.textMuted
   },
 
   // Progress bar — track wraps fill
@@ -311,8 +316,8 @@ const styles = StyleSheet.create({
   },
 
   itemInfo:    { flex: 1 },
-  itemName:    { fontSize: 15, color: COLORS.text, fontWeight: "500" },
-  itemChecked: { textDecorationLine: "line-through", color: COLORS.muted },
+  itemName:    { fontSize: 15, color: COLORS.textDark, fontWeight: "500" },
+  itemChecked: { textDecorationLine: "line-through", color: COLORS.textMuted },
 
   priceChip: {
     backgroundColor:  `${COLORS.primary}12`,
@@ -321,22 +326,22 @@ const styles = StyleSheet.create({
     paddingVertical:  4
   },
   priceChipChecked: {
-    backgroundColor: `${COLORS.muted}20`
+    backgroundColor: `${COLORS.textMuted}20`
   },
   itemPrice: {
     fontSize:   13,
     fontWeight: "700",
-    color:      COLORS.text
+    color:     COLORS.textDark
   },
   itemPriceChecked: {
-    color: COLORS.muted
+    color: COLORS.textMuted
   },
 
   totalCard: {
     flexDirection:   "row",
     justifyContent:  "space-between",
     alignItems:      "center",
-    backgroundColor: COLORS.card,
+    backgroundColor: COLORS.cardBg,
     padding:         16,
     borderRadius:    16,
     borderWidth:     1.5,
@@ -350,7 +355,7 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize:   16,
     fontWeight: "700",
-    color:      COLORS.text
+    color:      COLORS.textDark
   },
   totalPrice: {
     fontSize:   18,
@@ -361,7 +366,7 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection:        "row",
     justifyContent:       "space-around",
-    backgroundColor:      COLORS.card,
+    backgroundColor:      COLORS.cardBg,
     paddingVertical:      10,
     borderTopLeftRadius:  20,
     borderTopRightRadius: 20,

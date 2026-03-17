@@ -10,7 +10,6 @@ Globals:
     Environment:
       Variables:
         TABLE_NAME: !Ref TableName
-        COGNITO_USER_POOL_ARN: !Ref CognitoUserPoolArn
 
 Parameters:
   Environment:
@@ -26,9 +25,6 @@ Parameters:
   TableArn:
     Type: String
     Description: DynamoDB table ARN
-  CognitoUserPoolArn:
-    Type: String
-    Description: Cognito User Pool ARN
 
 Resources:
   HousematesApi:
@@ -69,6 +65,110 @@ Resources:
         Sourcemap: false
         EntryPoints:
           - handler.ts
+
+  CreateAnnouncementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-create-announcement"
+      CodeUri: functions/create-announcement
+      Handler: handler.handler
+      Description: Creates Announcement
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        AnnouncementPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /announcements
+            Method: POST
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        EntryPoints:
+          - handler.ts
+        External:
+          - "@aws-sdk/*"
+  TestingSDKFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-testingsdk"
+      CodeUri: functions/testing-sdk/
+      Handler: handler.handler
+      Description: Testing out DynamoDB SDK
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        TestingGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /testing
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        EntryPoints:
+          - handler.ts
+        External:
+          - "@aws-sdk/*"
+
+  CreateChoreFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-create-chore"
+      CodeUri: functions/create-chore/
+      Handler: handler.handler
+      Description: Create chore
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ChorePost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /chores
+            Method: POST
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        EntryPoints:
+          - handler.ts
+        External:
+          - "@aws-sdk/*"
+
+  # CreateUserFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: !Sub "${ProjectName}-create-user"
+  #     CodeUri: functions/create-user/
+  #     Handler: handler.handler
+  #     Description: Create DB User from Cognito Trigger
+  #     Policies:
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref TableName
+  #   Metadata:
+  #     BuildMethod: esbuild
+  #     BuildProperties:
+  #       Minify: true
+  #       Target: es2022
+  #       Sourcemap: false
+  #       EntryPoints:
+  #         - handler.ts
+  #       External:
+  #         - "@aws-sdk/*"
 
 Outputs:
   ApiUrl:

@@ -20,33 +20,24 @@ export const handler = async (
       body: JSON.stringify({ message: "Body is missing" }),
     };
   }
-  const { house_id, name, payers, owers, creator, price, is_urgent, due_date } =
-    JSON.parse(event.body);
-  const expense_id = crypto.randomUUID();
+
+  const { name, description, price, shoppinglist_id } = JSON.parse(event.body);
+  const shoppingitem_id = crypto.randomUUID();
   await dc.send(
     new PutCommand({
-      TableName: "Expenses_HM",
+      TableName: "Shopping_HM",
       Item: {
-        expense_id,
-        house_id,
+        shoppingitem_id,
+        shoppinglist_id,
         name,
+        description,
         price,
-        add_date: new Date().toISOString(),
-        due_date,
-        is_urgent,
-        payers: {
-          payers,
-        },
-        owers: {
-          owers,
-        },
-        creator,
       },
     }),
   );
 
   return {
     statusCode: 201,
-    body: JSON.stringify({ message: "Expense created", expense_id }),
+    body: JSON.stringify({ message: "Shopping Item Created", shoppingitem_id }),
   };
 };

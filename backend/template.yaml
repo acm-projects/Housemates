@@ -203,6 +203,33 @@ Resources:
           - handler.ts
         External:
           - "@aws-sdk/*"
+  CreateShoppingItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-create-shopping-item"
+      CodeUri: functions/create-shoppingitem/
+      Handler: handler.handler
+      Description: Create shopping item in list
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ShoppingItemPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /shopping/item
+            Method: Post
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        EntryPoints:
+          - handler.ts
+        External:
+          - "@aws-sdk/*"
   # CreateUserFunction:
   #   Type: AWS::Serverless::Function
   #   Properties:

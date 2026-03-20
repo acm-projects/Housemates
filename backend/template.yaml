@@ -93,33 +93,33 @@ Resources:
           - handler.ts
         External:
           - "@aws-sdk/*"
-  TestingSDKFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub "${ProjectName}-testingsdk"
-      CodeUri: functions/testing-sdk/
-      Handler: handler.handler
-      Description: Testing out DynamoDB SDK
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
-      Events:
-        TestingGet:
-          Type: Api
-          Properties:
-            RestApiId: !Ref HousematesApi
-            Path: /testing
-            Method: GET
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
+  # TestingSDKFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: !Sub "${ProjectName}-testingsdk"
+  #     CodeUri: functions/testing-sdk/
+  #     Handler: handler.handler
+  #     Description: Testing out DynamoDB SDK
+  #     Policies:
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref TableName
+  #     Events:
+  #       TestingGet:
+  #         Type: Api
+  #         Properties:
+  #           RestApiId: !Ref HousematesApi
+  #           Path: /testing
+  #           Method: GET
+  #   Metadata:
+  #     BuildMethod: esbuild
+  #     BuildProperties:
+  #       Minify: true
+  #       Target: es2022
+  #       Sourcemap: false
+  #       EntryPoints:
+  #         - handler.ts
+  #       External:
+  #         - "@aws-sdk/*"
 
   CreateChoreFunction:
     Type: AWS::Serverless::Function
@@ -149,6 +149,60 @@ Resources:
         External:
           - "@aws-sdk/*"
 
+  CreateHouseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-create-house"
+      CodeUri: functions/create-house/
+      Handler: handler.handler
+      Description: Create house and expenses bucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        HousePost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /house
+            Method: Post
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        EntryPoints:
+          - handler.ts
+        External:
+          - "@aws-sdk/*"
+  CreateExpenseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-create-expense"
+      CodeUri: functions/create-expense/
+      Handler: handler.handler
+      Description: Create expense
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ExpensePost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /expenses
+            Method: Post
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        EntryPoints:
+          - handler.ts
+        External:
+          - "@aws-sdk/*"
   # CreateUserFunction:
   #   Type: AWS::Serverless::Function
   #   Properties:

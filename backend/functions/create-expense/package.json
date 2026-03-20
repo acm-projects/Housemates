@@ -1,5 +1,5 @@
 {
-  "name": "create-chore",
+  "name": "create-expense",
   "version": "1.0.0",
   "private": true,
   "devDependencies": {

@@ -26,6 +26,18 @@ Parameters:
     Type: String
     Description: DynamoDB table ARN
 
+Metadata:
+  LambdaBuildConfig: &lambda-build
+    BuildMethod: esbuild
+    BuildProperties:
+      Minify: true
+      Target: es2022
+      Sourcemap: false
+      EntryPoints:
+        - handler.ts
+      External:
+        - "@aws-sdk/*"
+
 Resources:
   HousematesApi:
     Type: AWS::Serverless::Api
@@ -83,44 +95,7 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /announcements
             Method: POST
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
-  # TestingSDKFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub "${ProjectName}-testingsdk"
-  #     CodeUri: functions/testing-sdk/
-  #     Handler: handler.handler
-  #     Description: Testing out DynamoDB SDK
-  #     Policies:
-  #       - DynamoDBCrudPolicy:
-  #           TableName: !Ref TableName
-  #     Events:
-  #       TestingGet:
-  #         Type: Api
-  #         Properties:
-  #           RestApiId: !Ref HousematesApi
-  #           Path: /testing
-  #           Method: GET
-  #   Metadata:
-  #     BuildMethod: esbuild
-  #     BuildProperties:
-  #       Minify: true
-  #       Target: es2022
-  #       Sourcemap: false
-  #       EntryPoints:
-  #         - handler.ts
-  #       External:
-  #         - "@aws-sdk/*"
-
+    Metadata: *lambda-build
   CreateChoreFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -138,16 +113,7 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /chores
             Method: POST
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
+    Metadata: *lambda-build
 
   CreateHouseFunction:
     Type: AWS::Serverless::Function
@@ -166,16 +132,7 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /house
             Method: Post
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
+    Metadata: *lambda-build
   CreateExpenseFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -193,16 +150,7 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /expenses
             Method: Post
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
+    Metadata: *lambda-build
   CreateShoppingItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -220,16 +168,7 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /shopping/item
             Method: Post
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
+    Metadata: *lambda-build
   GetAnnouncements:
     Type: AWS::Serverless::Function
     Properties:
@@ -247,16 +186,25 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /announcements
             Method: GET
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
+    Metadata: *lambda-build
+  GetChoresByHouse:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-chores-house"
+      CodeUri: functions/get-chore-house/
+      Handler: handler.handler
+      Description: Get chores from house id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ChoresGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /chores
+            Method: GET
+    Metadata: *lambda-build
 Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL

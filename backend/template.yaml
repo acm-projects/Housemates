@@ -198,11 +198,29 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref TableName
       Events:
-        ChoresGet:
+        ChoresGetHouse:
           Type: Api
           Properties:
             RestApiId: !Ref HousematesApi
-            Path: /chores
+            Path: /chores/house
+            Method: GET
+    Metadata: *lambda-build
+  GetChoresByUser:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-chores-user"
+      CodeUri: functions/get-chore-user/
+      Handler: handler.handler
+      Description: Get chores from user id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ChoresGetUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /chores/user
             Method: GET
     Metadata: *lambda-build
 Outputs:

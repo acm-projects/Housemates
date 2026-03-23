@@ -20,7 +20,7 @@ export const handler = async (
       body: JSON.stringify({ message: "Body is missing" }),
     };
   }
-  const { rotation, name, date, description, house_id } = JSON.parse(
+  const { rotation, name, rrule, description, house_id } = JSON.parse(
     event.body,
   );
   await dc.send(
@@ -32,8 +32,11 @@ export const handler = async (
         name,
         description,
         rotation,
-        rotation_index: 0,
-        date,
+        index: 0,
+        current_user: rotation[0],
+        //Store RRULE date
+        //TODO: Add EventBridge Scheduler to auto-expire tasks
+        rrule,
       },
     }),
   );

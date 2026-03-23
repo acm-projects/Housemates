@@ -230,27 +230,33 @@ Resources:
           - handler.ts
         External:
           - "@aws-sdk/*"
-  # CreateUserFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub "${ProjectName}-create-user"
-  #     CodeUri: functions/create-user/
-  #     Handler: handler.handler
-  #     Description: Create DB User from Cognito Trigger
-  #     Policies:
-  #       - DynamoDBCrudPolicy:
-  #           TableName: !Ref TableName
-  #   Metadata:
-  #     BuildMethod: esbuild
-  #     BuildProperties:
-  #       Minify: true
-  #       Target: es2022
-  #       Sourcemap: false
-  #       EntryPoints:
-  #         - handler.ts
-  #       External:
-  #         - "@aws-sdk/*"
-
+  GetAnnouncements:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-announcements"
+      CodeUri: functions/get-announcements/
+      Handler: handler.handler
+      Description: Get announcements from house id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        AnnouncementsGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /announcements
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        EntryPoints:
+          - handler.ts
+        External:
+          - "@aws-sdk/*"
 Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL

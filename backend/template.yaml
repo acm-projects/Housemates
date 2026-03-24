@@ -169,6 +169,24 @@ Resources:
             Path: /shopping/item
             Method: Post
     Metadata: *lambda-build
+  CreateShoppingListFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-create-shopping-list"
+      CodeUri: functions/create-shoppinglist/
+      Handler: handler.handler
+      Description: Create shopping list
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ShoppingListPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /shopping/list
+            Method: Post
+    Metadata: *lambda-build
   GetAnnouncements:
     Type: AWS::Serverless::Function
     Properties:
@@ -221,6 +239,41 @@ Resources:
           Properties:
             RestApiId: !Ref HousematesApi
             Path: /chores/user
+            Method: GET
+    Metadata: *lambda-build
+  GetShoppingListHouse:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-shoppinglist-house"
+      CodeUri: functions/get-shoppinglist-house/
+      Handler: handler.handler
+      Description: Get shopping lists from house id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ShoppingListGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /shopping/list
+            Method: GET
+  GetShoppingItems:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-shopptingitems"
+      CodeUri: functions/get-shoppinglist/
+      Handler: handler.handler
+      Description: Get shopping items from shoppinglist
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ShoppingItemsGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /shopping/items
             Method: GET
     Metadata: *lambda-build
 Outputs:

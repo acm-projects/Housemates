@@ -21,26 +21,21 @@ export const handler = async (
     };
   }
 
-  const { name, description, price, list_id, house_id } = JSON.parse(
-    event.body,
-  );
-  const shoppingitem_id = crypto.randomUUID();
+  const { name, house_id } = JSON.parse(event.body);
+  const list_id = crypto.randomUUID();
   await dc.send(
     new PutCommand({
-      TableName: "Shopping_HM",
+      TableName: "ShoppingList_HM",
       Item: {
-        shoppingitem_id,
         list_id,
         house_id,
         name,
-        description,
-        price,
       },
     }),
   );
 
   return {
     statusCode: 201,
-    body: JSON.stringify({ message: "Shopping Item Created", shoppingitem_id }),
+    body: JSON.stringify({ message: "Shopping List Created", list_id }),
   };
 };

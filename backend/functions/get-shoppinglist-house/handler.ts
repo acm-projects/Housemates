@@ -16,14 +16,14 @@ export const handler = async (
       body: JSON.stringify({ message: "Body is missing" }),
     };
   }
-  const { user_id } = JSON.parse(event.body);
+  const { house_id } = JSON.parse(event.body);
   const response = await dc.send(
     new QueryCommand({
-      TableName: "Chores_HM",
-      IndexName: "current-user-index",
-      KeyConditionExpression: "current_user = :current_user",
+      TableName: "ShoppingList_HM",
+      IndexName: "house-index",
+      KeyConditionExpression: "house_id = :house_id",
       ExpressionAttributeValues: {
-        ":current_user": user_id,
+        ":house_id": house_id,
       },
     }),
   );
@@ -32,7 +32,7 @@ export const handler = async (
   if (response.$metadata.httpStatusCode == 200) {
     return {
       statusCode: 200,
-      body: JSON.stringify({ count: response.Count, items: response.Items }),
+      body: JSON.stringify({ response }),
     };
   } else {
     return {

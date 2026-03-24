@@ -151,6 +151,24 @@ Resources:
             Path: /expenses
             Method: Post
     Metadata: *lambda-build
+  GetExpensesHouseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-expenses-house"
+      CodeUri: functions/get-expenses-house/
+      Handler: handler.handler
+      Description: Get Expenses from house_id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ExpenseGetHouse:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /expenses/house
+            Method: Get
+    Metadata: *lambda-build
   CreateShoppingItemFunction:
     Type: AWS::Serverless::Function
     Properties:

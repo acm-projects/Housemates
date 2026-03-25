@@ -22,6 +22,14 @@ export const handler = async (
   }
 
   const { name, house_id } = JSON.parse(event.body);
+
+  if (!name || !house_id) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ message: "Missing at least 1 required fields: name, house_id" }),
+    };
+  }
+
   const list_id = crypto.randomUUID();
   await dc.send(
     new PutCommand({

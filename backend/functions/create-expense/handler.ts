@@ -22,6 +22,14 @@ export const handler = async (
   }
   const { house_id, name, payers, owers, creator, price, is_urgent, due_date } =
     JSON.parse(event.body);
+
+  if (!house_id || !name || !payers || !owers || !creator || price == null || is_urgent == null || !due_date) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ message: "Missing at least 1 required fields: house_id, name, payers, owers, creator, price, is_urgent, due_date" }),
+    };
+  }
+
   const expense_id = crypto.randomUUID();
   await dc.send(
     new PutCommand({

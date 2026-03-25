@@ -23,6 +23,14 @@ export const handler = async (
   const { rotation, name, rrule, description, house_id } = JSON.parse(
     event.body,
   );
+
+  if (!rotation || !name || !rrule || !description || !house_id) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ message: "Missing at least 1 required fields: rotation, name, rrule, description, house_id" }),
+    };
+  }
+
   const chore_id = crypto.randomUUID();
   await dc.send(
     new PutCommand({

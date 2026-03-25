@@ -1,0 +1,9 @@
+{
+  "name": "update-user",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.152",
+    "esbuild": "^0.25.9"
+  }
+}

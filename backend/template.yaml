@@ -365,6 +365,24 @@ Resources:
             Path: /shopping/items
             Method: GET
     Metadata: *lambda-build
+  GetExpenseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-expense"
+      CodeUri: functions/get-expense/
+      Handler: handler.handler
+      Description: Get expense by expense_id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ExpenseGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /expense
+            Method: GET
+    Metadata: *lambda-build
   UpdateUserFunction:
     Type: AWS::Serverless::Function
     Properties:

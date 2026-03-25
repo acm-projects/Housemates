@@ -22,8 +22,8 @@ export function AppBottomNav() {
           <Ionicons name="checkmark-done-outline" size={28} color={isTasks ? '#11131a' : '#141722'} />
         </Pressable>
 
-        <Pressable style={styles.iconButton} onPress={() => goTo('/tasks')}>
-          <Ionicons name="briefcase-outline" size={27} color={isTasks ? '#11131a' : '#141722'} />
+        <Pressable style={styles.iconButton}>
+          <Ionicons name="briefcase-outline" size={27} color="#141722" />
         </Pressable>
 
         <Pressable onPress={() => goTo('/')} style={[styles.homeBubble, isHome && styles.activeBubble]}>

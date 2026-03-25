@@ -24,7 +24,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.page}>
         <View style={styles.topRow}>
-          <Pressable style={styles.topIconButton} onPress={() => router.back()}>
+          <Pressable style={styles.topIconButton} onPress={() => router.replace('/')}>
             <Ionicons name="chevron-back" size={23} color="#1d2030" />
           </Pressable>
           <View style={styles.titleWrap}>

@@ -166,7 +166,7 @@ export default function TaskPage() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
-          <Pressable onPress={() => router.back()} style={styles.iconButton}>
+          <Pressable onPress={() => router.replace('/')} style={styles.iconButton}>
             <Ionicons name="chevron-back" size={23} color="#1d2030" />
           </Pressable>
           <Text style={styles.title}>Today&apos;s Tasks</Text>

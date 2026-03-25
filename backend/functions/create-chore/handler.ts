@@ -23,11 +23,12 @@ export const handler = async (
   const { rotation, name, rrule, description, house_id } = JSON.parse(
     event.body,
   );
+  const chore_id = crypto.randomUUID();
   await dc.send(
     new PutCommand({
       TableName: "Chores_HM",
       Item: {
-        chore_id: crypto.randomUUID(),
+        chore_id,
         house_id,
         name,
         description,
@@ -43,6 +44,6 @@ export const handler = async (
 
   return {
     statusCode: 201,
-    body: JSON.stringify({ message: "Chore created" }),
+    body: JSON.stringify({ message: "Chore created", chore_id }),
   };
 };

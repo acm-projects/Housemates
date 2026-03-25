@@ -1,4 +1,7 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import {
+  APIGatewayProxyEvent,
+  APIGatewayProxyResult,
+} from "aws-lambda";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
@@ -16,22 +19,16 @@ export const handler = async (
     };
   }
 
-  const { user_id, ...updates } = JSON.parse(event.body);
+  const { list_id, ...updates } = JSON.parse(event.body);
 
-  if (!user_id) {
+  if (!list_id) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "user_id is required" }),
+      body: JSON.stringify({ error: "list_id is required" }),
     };
   }
 
-  const allowedFields = [
-    "name",
-    "email",
-    "phone_number",
-    "pfp_url",
-    "settings",
-  ];
+  const allowedFields = ["name"];
   const expressionParts: string[] = [];
   const exprAttrNames: Record<string, string> = {};
   const exprAttrValues: Record<string, any> = {};
@@ -53,8 +50,8 @@ export const handler = async (
 
   await dc.send(
     new UpdateCommand({
-      TableName: "Users_HM",
-      Key: { user_id },
+      TableName: "ShoppingList_HM",
+      Key: { list_id },
       UpdateExpression: `SET ${expressionParts.join(", ")}`,
       ExpressionAttributeNames: exprAttrNames,
       ExpressionAttributeValues: exprAttrValues,
@@ -63,6 +60,6 @@ export const handler = async (
 
   return {
     statusCode: 200,
-    body: JSON.stringify({ message: "User updated" }),
+    body: JSON.stringify({ message: "Shopping list updated" }),
   };
 };

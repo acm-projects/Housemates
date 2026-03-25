@@ -21,14 +21,17 @@ export const handler = async (
     };
   }
 
-  const { name, description, price, shoppinglist_id } = JSON.parse(event.body);
+  const { name, description, price, list_id, house_id } = JSON.parse(
+    event.body,
+  );
   const shoppingitem_id = crypto.randomUUID();
   await dc.send(
     new PutCommand({
       TableName: "Shopping_HM",
       Item: {
         shoppingitem_id,
-        shoppinglist_id,
+        list_id,
+        house_id,
         name,
         description,
         price,

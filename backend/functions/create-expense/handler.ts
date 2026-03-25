@@ -34,12 +34,8 @@ export const handler = async (
         add_date: new Date().toISOString(),
         due_date,
         is_urgent,
-        payers: {
-          payers,
-        },
-        owers: {
-          owers,
-        },
+        payers,
+        owers,
         creator,
       },
     }),

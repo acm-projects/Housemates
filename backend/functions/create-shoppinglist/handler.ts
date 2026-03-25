@@ -4,7 +4,7 @@ import {
   Context,
 } from "aws-lambda";
 
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
@@ -20,29 +20,22 @@ export const handler = async (
       body: JSON.stringify({ message: "Body is missing" }),
     };
   }
-  const { rotation, name, rrule, description, house_id } = JSON.parse(
-    event.body,
-  );
+
+  const { name, house_id } = JSON.parse(event.body);
+  const list_id = crypto.randomUUID();
   await dc.send(
     new PutCommand({
-      TableName: "Chores_HM",
+      TableName: "ShoppingList_HM",
       Item: {
-        chore_id: crypto.randomUUID(),
+        list_id,
         house_id,
         name,
-        description,
-        rotation,
-        index: 0,
-        current_user: rotation[0],
-        //Store RRULE date
-        //TODO: Add EventBridge Scheduler to auto-expire tasks
-        rrule,
       },
     }),
   );
 
   return {
     statusCode: 201,
-    body: JSON.stringify({ message: "Chore created" }),
+    body: JSON.stringify({ message: "Shopping List Created", list_id }),
   };
 };

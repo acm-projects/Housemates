@@ -26,6 +26,18 @@ Parameters:
     Type: String
     Description: DynamoDB table ARN
 
+Metadata:
+  LambdaBuildConfig: &lambda-build
+    BuildMethod: esbuild
+    BuildProperties:
+      Minify: true
+      Target: es2022
+      Sourcemap: false
+      EntryPoints:
+        - handler.ts
+      External:
+        - "@aws-sdk/*"
+
 Resources:
   HousematesApi:
     Type: AWS::Serverless::Api
@@ -83,44 +95,7 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /announcements
             Method: POST
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
-  # TestingSDKFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub "${ProjectName}-testingsdk"
-  #     CodeUri: functions/testing-sdk/
-  #     Handler: handler.handler
-  #     Description: Testing out DynamoDB SDK
-  #     Policies:
-  #       - DynamoDBCrudPolicy:
-  #           TableName: !Ref TableName
-  #     Events:
-  #       TestingGet:
-  #         Type: Api
-  #         Properties:
-  #           RestApiId: !Ref HousematesApi
-  #           Path: /testing
-  #           Method: GET
-  #   Metadata:
-  #     BuildMethod: esbuild
-  #     BuildProperties:
-  #       Minify: true
-  #       Target: es2022
-  #       Sourcemap: false
-  #       EntryPoints:
-  #         - handler.ts
-  #       External:
-  #         - "@aws-sdk/*"
-
+    Metadata: *lambda-build
   CreateChoreFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -138,16 +113,7 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /chores
             Method: POST
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
+    Metadata: *lambda-build
 
   CreateHouseFunction:
     Type: AWS::Serverless::Function
@@ -166,16 +132,7 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /house
             Method: Post
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
+    Metadata: *lambda-build
   CreateExpenseFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -193,16 +150,60 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /expenses
             Method: Post
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
+    Metadata: *lambda-build
+  GetExpensesHouseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-expenses-house"
+      CodeUri: functions/get-expenses-house/
+      Handler: handler.handler
+      Description: Get Expenses from house_id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ExpenseGetHouse:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /expenses/house
+            Method: Get
+  GetExpensesOwersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-expenses-owers"
+      CodeUri: functions/get-expenses-ower/
+      Handler: handler.handler
+      Description: Get expenses where user is an ower
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ExpenseGetOwer:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /expenses/ower
+            Method: GET
+    Metadata: *lambda-build
+  GetExpensesPayersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-expenses-payers"
+      CodeUri: functions/get-expenses-payer/
+      Handler: handler.handler
+      Description: Get expenses where user is a payer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ExpenseGetPayer:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /expenses/payer
+            Method: GET
+    Metadata: *lambda-build
   CreateShoppingItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -220,37 +221,150 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /shopping/item
             Method: Post
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Sourcemap: false
-        EntryPoints:
-          - handler.ts
-        External:
-          - "@aws-sdk/*"
-  # CreateUserFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub "${ProjectName}-create-user"
-  #     CodeUri: functions/create-user/
-  #     Handler: handler.handler
-  #     Description: Create DB User from Cognito Trigger
-  #     Policies:
-  #       - DynamoDBCrudPolicy:
-  #           TableName: !Ref TableName
-  #   Metadata:
-  #     BuildMethod: esbuild
-  #     BuildProperties:
-  #       Minify: true
-  #       Target: es2022
-  #       Sourcemap: false
-  #       EntryPoints:
-  #         - handler.ts
-  #       External:
-  #         - "@aws-sdk/*"
-
+    Metadata: *lambda-build
+  CreateShoppingListFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-create-shopping-list"
+      CodeUri: functions/create-shoppinglist/
+      Handler: handler.handler
+      Description: Create shopping list
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ShoppingListPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /shopping/list
+            Method: Post
+    Metadata: *lambda-build
+  GetAnnouncements:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-announcements"
+      CodeUri: functions/get-announcements/
+      Handler: handler.handler
+      Description: Get announcements from house id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        AnnouncementsGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /announcements
+            Method: GET
+    Metadata: *lambda-build
+  GetChoresByHouse:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-chores-house"
+      CodeUri: functions/get-chore-house/
+      Handler: handler.handler
+      Description: Get chores from house id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ChoresGetHouse:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /chores/house
+            Method: GET
+    Metadata: *lambda-build
+  GetChoresByUser:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-chores-user"
+      CodeUri: functions/get-chore-user/
+      Handler: handler.handler
+      Description: Get chores from user id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ChoresGetUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /chores/user
+            Method: GET
+    Metadata: *lambda-build
+  GetShoppingListHouse:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-shoppinglist-house"
+      CodeUri: functions/get-shoppinglist-house/
+      Handler: handler.handler
+      Description: Get shopping lists from house id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ShoppingListGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /shopping/list
+            Method: GET
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-user"
+      CodeUri: functions/get-user/
+      Handler: handler.handler
+      Description: Get user by user_id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        UserGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /users
+            Method: GET
+    Metadata: *lambda-build
+  GetUsersHouseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-users-house"
+      CodeUri: functions/get-users-house/
+      Handler: handler.handler
+      Description: Get users from house id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        UsersGetHouse:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /users/house
+            Method: GET
+    Metadata: *lambda-build
+  GetShoppingItems:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-shopptingitems"
+      CodeUri: functions/get-shoppinglist/
+      Handler: handler.handler
+      Description: Get shopping items from shoppinglist
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ShoppingItemsGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /shopping/items
+            Method: GET
+    Metadata: *lambda-build
 Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL

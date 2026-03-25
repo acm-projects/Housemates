@@ -58,9 +58,7 @@ export const handler = async (
         id,
         name,
         date_created: new Date().toISOString(),
-        users: {
-          user_id,
-        },
+        users: [user_id],
         expense_bucket: bucketName,
       },
     }),

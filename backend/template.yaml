@@ -311,6 +311,24 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /shopping/list
             Method: GET
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-user"
+      CodeUri: functions/get-user/
+      Handler: handler.handler
+      Description: Get user by user_id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        UserGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /users
+            Method: GET
+    Metadata: *lambda-build
   GetUsersHouseFunction:
     Type: AWS::Serverless::Function
     Properties:

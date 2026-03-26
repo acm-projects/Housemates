@@ -11,15 +11,7 @@ import {
   Platform,
   ScrollView
 } from 'react-native'
-import {
-  HomeIcon,
-  ChecklistIcon,
-  ShoppingBagIcon,
-  CalendarIcon,
-  ExpensesIcon,
-  DownloadIcon,
-  AddToCalendarIcon
-} from './icons'
+import { Ionicons } from '@expo/vector-icons'
 
 // --- Types ---
 type Props = {
@@ -55,12 +47,13 @@ const COLORS = {
 // --- Tab Bar ---
 type TabItem = { id: string; icon: React.ReactNode }
 
+const iconColor = "#2D2D4E"
 const tabs: TabItem[] = [
-  { id: 'list',     icon: <ChecklistIcon   size={24} color={COLORS.primary} /> },
-  { id: 'wallet',   icon: <ShoppingBagIcon size={24} color={COLORS.primary} /> },
-  { id: 'home',     icon: <HomeIcon        size={24} color={COLORS.primary} /> },
-  { id: 'calendar', icon: <CalendarIcon    size={24} color={COLORS.primary} /> },
-  { id: 'flag',     icon: <ExpensesIcon    size={24} color={COLORS.primary} /> }
+  { id: 'list',     icon: <Ionicons name="list-outline" size={24} color={iconColor} /> },
+  { id: 'wallet',   icon: <Ionicons name="bag-outline" size={24} color={iconColor} /> },
+  { id: 'home',     icon: <Ionicons name="home-outline" size={24} color={iconColor} /> },
+  { id: 'calendar', icon: <Ionicons name="calendar-outline" size={24} color={iconColor} /> },
+  { id: 'flag',     icon: <Ionicons name="flag-outline" size={24} color={iconColor} /> }
 ]
 
 function BottomTabBar({
@@ -161,7 +154,7 @@ export default function AddListScreen({ onBack, onDone }: Props) {
           <View style={[styles.rowCard, focusedField === 'price' && styles.rowCardFocused]}>
             <View style={styles.rowCardLeft}>
               <View style={[styles.iconCircle, { backgroundColor: `${COLORS.secondary}50` }]}>
-                <DownloadIcon size={20} color={COLORS.primary} />
+              <Ionicons name="cash-outline" size={20} color={COLORS.primary} />
               </View>
               <View>
                 <Text style={styles.inputLabel}>ESTIMATED PRICE</Text>
@@ -189,7 +182,7 @@ export default function AddListScreen({ onBack, onDone }: Props) {
           <View style={[styles.rowCard, focusedField === 'date' && styles.rowCardFocused]}>
             <View style={styles.rowCardLeft}>
               <View style={[styles.iconCircle, { backgroundColor: `${COLORS.secondary}50` }]}>
-                <AddToCalendarIcon size={20} color={COLORS.primary} />
+              <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
               </View>
               <View>
                 <Text style={styles.inputLabel}>DUE DATE</Text>

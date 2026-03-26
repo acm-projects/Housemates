@@ -11,29 +11,34 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import {
-  HomeIcon,
-  ChecklistIcon,
-  ShoppingBagIcon,
-  CalendarIcon,
-  ExpensesIcon
-} from './icons';
+import { useRouter } from 'expo-router';
 
 // --- Types ---
 type Props = {
   onBack?: () => void;
-  onJoinWithQR?: () => void;
   onJoinHouse?: (data: { password: string }) => void;
-  qrPreviewValue?: string;
 };
+
+// --- Colors ---
+export const COLORS = {
+  bg:           '#FDFDFF',
+  cardBg:       '#F2F5FA',
+  primary:      '#0A2239',
+  secondary:    '#176087',
+  accent:       '#ADB6C4',
+  textDark:     '#132E32',
+  textMuted:    '#98AAC5',
+  border:       '#3590F3',
+  borderFocus:  '#ADB6C4',
+  white:        '#FFFFFF',
+}
 
 // --- Main Screen ---
 export default function JoinHouseScreen({
   onBack = () => {},
-  onJoinWithQR = () => {},
   onJoinHouse = () => {},
-  qrPreviewValue = 'join-house-qr',
 }: Props) {
+  const router = useRouter();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [focused, setFocused] = useState(false);
@@ -55,6 +60,10 @@ export default function JoinHouseScreen({
     joinHouse(password);
     setError('');
     onJoinHouse({ password });
+  };
+
+  const handleScanQR = () => {
+    router.push('/QrCode');
   };
 
   return (
@@ -93,10 +102,10 @@ export default function JoinHouseScreen({
           showsVerticalScrollIndicator={false}
         >
 
-          {/* QR Option Card */}
+          {/* QR Option Card — tapping navigates to the QR/addHousemate screen */}
           <TouchableOpacity
             style={styles.qrCard}
-            onPress={onJoinWithQR}
+            onPress={handleScanQR}
             accessibilityRole="button"
             accessibilityLabel="Join with QR code"
             activeOpacity={0.8}
@@ -173,22 +182,6 @@ export default function JoinHouseScreen({
     </SafeAreaView>
   );
 }
-
-// --- Colors ---
-const COLORS = {
-  bg: '#FDFDFF',
-  cardBg: '#D1DAE6', 
-  primary: '#0A2239',
-  secondary: '#176087',
-  accent: '#0A2239',// ADB6C4'
-  textDark: '#132E32',
-  textMuted: '#98AAC5',
-  border: '#3590F3',
-  borderFocus: '#ADB6C4',
-  stepInactive: '#ADB6C4',
-  white: '#FFFFFF',
-
-};
 
 // --- Styles ---
 const styles = StyleSheet.create({

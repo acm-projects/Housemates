@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { apiPost } from "@/utils/api";
+import { useRouter, Link, Redirect } from 'expo-router';
 import {
   View,
   Text,
@@ -21,6 +22,19 @@ import {
   ExpensesIcon
 } from './icons';
 
+export const COLORS = {
+  bg:           '#FDFDFF',
+  cardBg:       '#F2F5FA',   // ← was #D1DAE6; lighter for better contrast
+  primary:      '#0A2239',
+  secondary:    '#176087',
+  accent:       '#ADB6C4',
+  textDark:     '#132E32',
+  textMuted:    '#98AAC5',
+  border:       '#3590F3',
+  borderFocus:  '#ADB6C4',
+  white:        '#FFFFFF',
+}
+
 // --- API ---
 async function signUp(userData: { name: string; email: string; password: string }): Promise<string> {
   try {
@@ -36,11 +50,11 @@ async function signUp(userData: { name: string; email: string; password: string 
 // --- Tab Bar ---
 type TabItem = { id: string; icon: React.ReactNode };
 const tabs: TabItem[] = [
-  { id: 'list', icon: <ChecklistIcon size={24} color="#678D58" /> },
-  { id: 'wallet', icon: <ShoppingBagIcon size={24} color="#678D58" /> },
-  { id: 'home', icon: <HomeIcon size={24} color="#678D58" /> },
-  { id: 'calendar', icon: <CalendarIcon size={24} color="#678D58" /> },
-  { id: 'flag', icon: <ExpensesIcon size={24} color="#678D58" /> },
+  { id: 'list', icon: <ChecklistIcon size={24} color={COLORS.primary}/> },
+  { id: 'wallet', icon: <ShoppingBagIcon size={24} color={COLORS.primary} /> },
+  { id: 'home', icon: <HomeIcon size={24} color={COLORS.primary} /> },
+  { id: 'calendar', icon: <CalendarIcon size={24} color={COLORS.primary} /> },
+  { id: 'flag', icon: <ExpensesIcon size={24} color={COLORS.primary} /> },
 ];
 
 function BottomTabBar({ activeTab, onTabPress }: { activeTab: string; onTabPress: (id: string) => void }) {
@@ -68,6 +82,7 @@ export default function SignUpScreen({
   onBack?: () => void;
   onSignUp?: (data: { name: string; email: string; password: string }) => void;
 }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('home');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -77,6 +92,7 @@ export default function SignUpScreen({
   const handleSignUp = () => {
     signUp({ name, email, password });
     onSignUp?.({ name, email, password });
+    router.replace('/home')
   };
 
   return (
@@ -190,23 +206,6 @@ export default function SignUpScreen({
     </SafeAreaView>
   );
 }
-
-// --- Colors ---
-const COLORS = {
-  bg: '#FDFDFF',
-  cardBg: '#D1DAE6', 
-  primary: '#0A2239',
-  secondary: '#176087',
-  accent: '#ADB6C4',//
-  textDark: '#132E32',
-  textMuted: '#98AAC5',
-  border: '#3590F3',
-  borderFocus: '#ADB6C4',
-  stepInactive: '#ADB6C4',
-  white: '#FFFFFF',
-
-};
-
 
 // --- Styles ---
 const styles = StyleSheet.create({

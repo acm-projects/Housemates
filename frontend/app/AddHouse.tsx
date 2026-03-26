@@ -199,7 +199,7 @@ export default function AddHouseScreen({
 // --- Colors ---
 const COLORS = {
   bg: '#FDFDFF',
-  /*cardBg: '#D1DAE6', */
+  cardBg: '#D1DAE6',
   primary: '#0A2239',
   secondary: '#176087',
   accent: '#ADB6C4',//

@@ -18,6 +18,20 @@ import {
   ExpensesIcon,
   BellIcon
 } from './icons';
+import { useRouter } from 'expo-router';
+
+export const COLORS = {
+  bg: '#FDFDFF',
+  cardBg: '#F2F5FA',
+  primary: '#0A2239',
+  secondary: '#176087',
+  accent: '#ADB6C4',
+  textDark: '#132E32',
+  textMuted: '#98AAC5',
+  border: '#3590F3',
+  borderFocus: '#ADB6C4',
+  white: '#FFFFFF',
+}
 
 // --- Types ---
 type SplitMember = {
@@ -76,7 +90,6 @@ async function addExpense(data: { amount: number; description: string }) {
 
 function SplitTableCard({ members }: { members: SplitMember[] }) {
   const totalOwed = members.filter(m => m.amount > 0).reduce((a, m) => a + m.amount, 0);
-  const totalOwe = Math.abs(members.filter(m => m.amount < 0 && m.name !== 'You').reduce((a, m) => a + m.amount, 0));
 
   return (
     <View style={styles.splitCard}>
@@ -148,11 +161,11 @@ function ExpenseDateGroup({ group }: { group: GroupedExpenses }) {
 // --- Tab Bar ---
 type TabItem = { id: string; icon: React.ReactNode };
 const tabs: TabItem[] = [
-  { id: 'list', icon: <ChecklistIcon size={24} color="#678D58" /> },
-  { id: 'wallet', icon: <ShoppingBagIcon size={24} color="#678D58" /> },
-  { id: 'home', icon: <HomeIcon size={24} color="#678D58" /> },
-  { id: 'calendar', icon: <CalendarIcon size={24} color="#678D58" /> },
-  { id: 'flag', icon: <ExpensesIcon size={24} color="#678D58" /> },
+  { id: 'list', icon: <ChecklistIcon size={24} color={COLORS.primary} /> },
+  { id: 'wallet', icon: <ShoppingBagIcon size={24} color={COLORS.primary} /> },
+  { id: 'home', icon: <HomeIcon size={24} color={COLORS.primary} /> },
+  { id: 'calendar', icon: <CalendarIcon size={24} color={COLORS.primary} /> },
+  { id: 'flag', icon: <ExpensesIcon size={24} color={COLORS.primary} /> },
 ];
 
 function BottomTabBar({ activeTab, onTabPress }: { activeTab: string; onTabPress: (id: string) => void }) {
@@ -175,12 +188,15 @@ function BottomTabBar({ activeTab, onTabPress }: { activeTab: string; onTabPress
 // --- Main Screen ---
 export default function ExpensesScreen({
   onBack,
-  onSplitMoney,
 }: {
   onBack?: () => void;
-  onSplitMoney?: () => void;
 }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = React.useState('flag');
+
+  const handleSplitMoney = () => {
+    router.push('/splitMoney');
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -223,7 +239,7 @@ export default function ExpensesScreen({
       </ScrollView>
 
       {/* Split Money FAB */}
-      <TouchableOpacity style={styles.splitMoneyButton} onPress={onSplitMoney} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.splitMoneyButton} onPress={handleSplitMoney} activeOpacity={0.85}>
         <View style={styles.splitMoneyIconCircle}>
           <Text style={styles.splitMoneyIconText}>$</Text>
         </View>
@@ -235,22 +251,6 @@ export default function ExpensesScreen({
     </SafeAreaView>
   );
 }
-
-// --- Colors ---
-const COLORS = {
-  bg: '#FDFDFF',
-  cardBg: '#D1DAE6', 
-  primary: '#0A2239',
-  secondary: '#176087',
-  accent: '#ADB6C4',//
-  textDark: '#132E32',
-  textMuted: '#98AAC5',
-  border: '#3590F3',
-  borderFocus: '#ADB6C4',
-  stepInactive: '#ADB6C4',
-  white: '#FFFFFF',
-
-};
 
 
 // --- Styles ---
@@ -307,7 +307,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     padding: 4,
   },
-
   notifDot: {
     position: 'absolute',
     top: 4,

@@ -1,11 +1,14 @@
 import React, { useState } from "react"
+import { useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  ScrollView
+  ScrollView,
+  Pressable
 } from "react-native"
 import {
   HomeIcon,
@@ -32,20 +35,18 @@ type Group = {
 type TabItem = { id: string; icon: React.ReactNode }
 
 // --- Colors ---
-const COLORS = {
-  bg: '#FDFDFF',
-  cardBg: '#D1DAE6', 
-  primary: '#0A2239',
-  secondary: '#176087',
-  accent: '#ADB6C4',//
-  textDark: '#132E32',
-  textMuted: '#98AAC5',
-  border: '#3590F3',
-  borderFocus: '#ADB6C4',
-  stepInactive: '#ADB6C4',
-  white: '#FFFFFF',
-
-};
+export const COLORS = {
+  bg:           '#FDFDFF',
+  cardBg:       '#F2F5FA',  
+  primary:      '#0A2239',
+  secondary:    '#6CA6C1',
+  accent:       '#ADB6C4',
+  textDark:     '#132E32',
+  textMuted:    '#98AAC5',
+  border:       '#6CA6C1', 
+  borderFocus:  '#ADB6C4',
+  white:        '#FFFFFF',
+}
 
 
 // --- Tab Bar ---
@@ -102,6 +103,7 @@ const initialData: Group[] = [
 
 // --- Main Screen ---
 export default function ShoppingListScreen() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("wallet")
   const [data, setData]           = useState<Group[]>(initialData)
 
@@ -202,6 +204,12 @@ export default function ShoppingListScreen() {
         </View>
 
       </ScrollView>
+      <Pressable
+        style={styles.fab}
+        onPress={() => router.push('/AddList')}
+      >
+        <Ionicons name="add" size={26} color={COLORS.white} />
+      </Pressable>
 
       <BottomTabBar activeTab={activeTab} onTabPress={setActiveTab} />
 
@@ -215,7 +223,24 @@ const styles = StyleSheet.create({
     flex:            1,
     backgroundColor: COLORS.bg
   },
-
+  fab: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+  },
   header: {
     paddingHorizontal: 20,
     paddingTop:        20,

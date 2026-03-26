@@ -38,20 +38,18 @@ async function saveTask(data: { taskName: string; urgent: boolean; time: string 
 }
 
 // --- Colors ---
-const COLORS = {
-  bg: '#FDFDFF',
-  cardBg: '#D1DAE6', 
-  primary: '#0A2239',
-  secondary: '#176087',
-  accent: '#ADB6C4',//
-  textDark: '#132E32',
-  textMuted: '#98AAC5',
-  border: '#3590F3',
-  borderFocus: '#ADB6C4',
-  stepInactive: '#ADB6C4',
-  white: '#FFFFFF',
-
-};
+export const COLORS = {
+  bg:           '#FDFDFF',
+  cardBg:       '#F2F5FA',   // ← was #D1DAE6; lighter for better contrast
+  primary:      '#0A2239',
+  secondary:    '#176087',
+  accent:       '#ADB6C4',
+  textDark:     '#132E32',
+  textMuted:    '#98AAC5',
+  border:       '#3590F3',
+  borderFocus:  '#ADB6C4',
+  white:        '#FFFFFF',
+}
 
 // --- Tab Bar ---
 type TabItem = { id: string; icon: React.ReactNode }

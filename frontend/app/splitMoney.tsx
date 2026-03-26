@@ -22,6 +22,20 @@ import {
   VenmoIcon,
   ZelleIcon
 } from './icons';
+import { useRouter } from 'expo-router';
+
+export const COLORS = {
+  bg: '#FDFDFF',
+  cardBg: '#F2F5FA',
+  primary: '#0A2239',
+  secondary: '#176087',
+  accent: '#ADB6C4',
+  textDark: '#132E32',
+  textMuted: '#98AAC5',
+  border: '#294C60',
+  borderFocus: '#ADB6C4',
+  white: '#FFFFFF',
+}
 
 // --- Types ---
 type SplitOption = 'you_owe' | 'they_owe' | 'split';
@@ -67,8 +81,8 @@ function AddBillCard({
         <Text style={styles.inputLabel}>With</Text>
         <TextInput
           style={styles.input}
-                cursorColor={COLORS.primary}
-                selectionColor={`${COLORS.primary}40`}
+          cursorColor={COLORS.primary}
+          selectionColor={`${COLORS.primary}40`}
           value={friendName}
           onChangeText={setFriendName}
           placeholder="Housemate's name"
@@ -204,11 +218,11 @@ function SplitOptionsCard({
 // --- Tab Bar ---
 type TabItem = { id: string; icon: React.ReactNode };
 const tabs: TabItem[] = [
-  { id: 'list', icon: <ChecklistIcon size={24} color="#678D58" /> },
-  { id: 'wallet', icon: <ShoppingBagIcon size={24} color="#678D58" /> },
-  { id: 'home', icon: <HomeIcon size={24} color="#678D58" /> },
-  { id: 'calendar', icon: <CalendarIcon size={24} color="#678D58" /> },
-  { id: 'flag', icon: <ExpensesIcon size={24} color="#678D58" /> },
+  { id: 'list', icon: <ChecklistIcon size={24} color={COLORS.primary} /> },
+  { id: 'wallet', icon: <ShoppingBagIcon size={24} color={COLORS.primary} /> },
+  { id: 'home', icon: <HomeIcon size={24} color={COLORS.primary} /> },
+  { id: 'calendar', icon: <CalendarIcon size={24} color={COLORS.primary}/> },
+  { id: 'flag', icon: <ExpensesIcon size={24} color={COLORS.primary}/> },
 ];
 
 function BottomTabBar({ activeTab, onTabPress }: { activeTab: string; onTabPress: (id: string) => void }) {
@@ -230,19 +244,22 @@ function BottomTabBar({ activeTab, onTabPress }: { activeTab: string; onTabPress
 
 // --- Main Screen ---
 export default function SplitMoneyScreen({
-  onBack,
   onDone,
 }: {
-  onBack?: () => void;
   onDone?: (data: { friendName: string; loanType: LoanType; amount: string; splitOption: SplitOption | null }) => void;
 }) {
-  const [activeTab, setActiveTab] = useState('home');
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState('flag');
   const [friendName, setFriendName] = useState('');
   const [loanType, setLoanType] = useState<LoanType>('cash loan');
   const [amount, setAmount] = useState('');
   const [showLoanDropdown, setShowLoanDropdown] = useState(false);
   const [selectedSplitOption, setSelectedSplitOption] = useState<SplitOption | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const handleBack = () => {
+    router.back();
+  };
 
   const handleDone = () => {
     splitMoney({ amount: parseFloat(amount || '0'), users: [friendName] });
@@ -255,7 +272,7 @@ export default function SplitMoneyScreen({
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <View style={styles.backButtonInner}>
             <Text style={styles.backArrow}>←</Text>
           </View>
@@ -304,22 +321,6 @@ export default function SplitMoneyScreen({
     </SafeAreaView>
   );
 }
-
-// --- Colors ---
-const COLORS = {
-  bg: '#FDFDFF',
-  cardBg: '#D1DAE6', 
-  primary: '#0A2239',
-  secondary: '#176087',
-  accent: '#0A2239',
-  textDark: '#132E32',
-  textMuted: '#98AAC5',
-  border: '#3590F3',
-  borderFocus: '#ADB6C4',
-  stepInactive: '#ADB6C4',
-  white: '#FFFFFF',
-
-};
 
 
 // --- Styles ---

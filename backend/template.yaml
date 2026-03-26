@@ -365,6 +365,168 @@ Resources:
             Path: /shopping/items
             Method: GET
     Metadata: *lambda-build
+  GetExpenseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-expense"
+      CodeUri: functions/get-expense/
+      Handler: handler.handler
+      Description: Get expense by expense_id
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ExpenseGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /expense
+            Method: GET
+    Metadata: *lambda-build
+  UpdateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-update-user"
+      CodeUri: functions/update-user/
+      Handler: handler.handler
+      Description: Update user info
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        UserPut:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /users
+            Method: PUT
+    Metadata: *lambda-build
+  UpdateHouseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-update-house"
+      CodeUri: functions/update-house/
+      Handler: handler.handler
+      Description: Update house info
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        HousePut:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /house
+            Method: PUT
+    Metadata: *lambda-build
+  UpdateHouseUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-update-house-user"
+      CodeUri: functions/update-house-user/
+      Handler: handler.handler
+      Description: Add a user to a house
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        HouseUserPut:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /house/user
+            Method: PUT
+    Metadata: *lambda-build
+  UpdateChoreFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-update-chore"
+      CodeUri: functions/update-chore/
+      Handler: handler.handler
+      Description: Update chore info
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ChorePut:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /chores
+            Method: PUT
+    Metadata: *lambda-build
+  UpdateAnnouncementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-update-announcement"
+      CodeUri: functions/update-announcement/
+      Handler: handler.handler
+      Description: Update announcement
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        AnnouncementPut:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /announcements
+            Method: PUT
+    Metadata: *lambda-build
+  UpdateExpenseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-update-expense"
+      CodeUri: functions/update-expense/
+      Handler: handler.handler
+      Description: Update expense
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ExpensePut:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /expenses
+            Method: PUT
+    Metadata: *lambda-build
+  UpdateShoppingListFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-update-shoppinglist"
+      CodeUri: functions/update-shoppinglist/
+      Handler: handler.handler
+      Description: Update shopping list
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ShoppingListPut:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /shopping/list
+            Method: PUT
+    Metadata: *lambda-build
+  UpdateShoppingItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-update-shoppingitem"
+      CodeUri: functions/update-shoppingitem/
+      Handler: handler.handler
+      Description: Update shopping item
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ShoppingItemPut:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /shopping/item
+            Method: PUT
+    Metadata: *lambda-build
 Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL

@@ -23,11 +23,20 @@ export const handler = async (
   }
   //maybe add image?
   const { house_id, text, user_id } = JSON.parse(event.body);
+
+  if (!house_id || !text || !user_id) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ message: "Missing at least 1 required fields: house_id, text, user_id" }),
+    };
+  }
+
+  const announcement_id = crypto.randomUUID();
   await dc.send(
     new PutCommand({
       TableName: "Announcements_HM",
       Item: {
-        announcement_id: crypto.randomUUID(),
+        announcement_id,
         house_id,
         text,
         user_id,
@@ -38,6 +47,6 @@ export const handler = async (
 
   return {
     statusCode: 201,
-    body: JSON.stringify({ message: "Annoucement created" }),
+    body: JSON.stringify({ message: "Annoucement created", announcement_id }),
   };
 };

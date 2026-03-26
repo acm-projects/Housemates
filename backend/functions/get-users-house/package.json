@@ -1,5 +1,5 @@
 {
-  "name": "create-house",
+  "name": "get-users-house",
   "version": "1.0.0",
   "private": true,
   "devDependencies": {

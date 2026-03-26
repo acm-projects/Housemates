@@ -24,6 +24,14 @@ export const handler = async (
   const { name, description, price, list_id, house_id } = JSON.parse(
     event.body,
   );
+
+  if (!name || !description || price == null || !list_id || !house_id) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ message: "Missing at least 1 required fields: name, description, price, list_id, house_id" }),
+    };
+  }
+
   const shoppingitem_id = crypto.randomUUID();
   await dc.send(
     new PutCommand({

@@ -1,5 +1,5 @@
 {
-  "name": "get-shoppinglist-house",
+  "name": "update-house-user",
   "version": "1.0.0",
   "private": true,
   "devDependencies": {

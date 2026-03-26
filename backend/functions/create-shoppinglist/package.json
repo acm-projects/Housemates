@@ -1,5 +1,5 @@
 {
-  "name": "create-shoppingitem",
+  "name": "create-shoppinglist",
   "version": "1.0.0",
   "private": true,
   "devDependencies": {

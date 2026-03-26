@@ -29,6 +29,14 @@ export const handler = async (
   }
 
   const { user_id, name } = JSON.parse(event.body);
+
+  if (!user_id || !name) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "Missing at least 1 required fields: user_id, name" }),
+    };
+  }
+
   const id = crypto.randomUUID();
   const bucketName = encodeURI(id + "Expense_bucket");
 

@@ -1,5 +1,5 @@
-import { Redirect } from 'expo-router'
+import { Redirect } from 'expo-router';
 
-export default function IndexScreen() {
-  return <Redirect href="/signUp" />
+export default function Index() {
+  return <Redirect href="/signUp" />;
 }

@@ -16,11 +16,11 @@ export function AppBottomNav() {
   const pathname = usePathname();
 
   const tabs = [
-    { route: '/taskPage',     icon: 'list-outline' },
-    { route: '/ShoppingList', icon: 'bag-outline' },
-    { route: '/home',         icon: 'home-outline' },
-    { route: null,            icon: 'calendar-outline' }, // ← no route
-    { route: '/expenses',     icon: 'card-outline' },
+    { route: '/taskPage',     icon: 'list-outline'     },
+    { route: '/ShoppingList', icon: 'bag-outline'      },
+    { route: '/home',         icon: 'home-outline'     },
+    { route: null,     icon: 'calendar-outline' }, // because there is no calendar currently
+    { route: '/expenses',     icon: 'card-outline'     },
   ] as const;
 
   return (

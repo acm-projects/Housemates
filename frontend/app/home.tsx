@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { AppBottomNav } from '../components/app-bottom-nav';
+import { AppBottomNav } from './AppBottomNav';
 
 const COLORS = {
   bg:          '#FDFDFF',
@@ -51,7 +51,7 @@ const announcements: Announcement[] = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [tasks, setTasks]                     = useState(initialTasks);
+  const [tasks, setTasks]                       = useState(initialTasks);
   const [announcementsOpen, setAnnouncementsOpen] = useState(true);
 
   const toggleTask = (id: string) => {
@@ -68,9 +68,9 @@ export default function HomeScreen() {
 
         {/* Header */}
         <View style={styles.headerRow}>
-        <Pressable style={styles.avatarPlaceholder} onPress={() => router.push('/settings')}>
-          <Ionicons name="settings-outline" size={22} color={COLORS.primary} />
-        </Pressable>
+          <Pressable style={styles.avatarPlaceholder} onPress={() => router.push('/settings')}>
+            <Ionicons name="settings-outline" size={22} color={COLORS.primary} />
+          </Pressable>
           <Text style={styles.headerTitle}>Welcome Home</Text>
           <View style={styles.avatarSpacer} />
         </View>
@@ -113,11 +113,11 @@ export default function HomeScreen() {
         >
           <Text style={styles.announcementsTitle}>Announcements</Text>
           <View style={styles.chevronBox}>
-          <Ionicons
-            name={announcementsOpen ? 'chevron-down-outline' : 'chevron-forward-outline'}
-            size={20}
-            color={COLORS.primary}
-          />
+            <Ionicons
+              name={announcementsOpen ? 'chevron-down-outline' : 'chevron-forward-outline'}
+              size={20}
+              color={COLORS.primary}
+            />
           </View>
         </Pressable>
 

@@ -527,6 +527,114 @@ Resources:
             Path: /shopping/item
             Method: PUT
     Metadata: *lambda-build
+  DeleteAnnouncementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-delete-announcement"
+      CodeUri: functions/delete-announcement/
+      Handler: handler.handler
+      Description: Delete announcement
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        AnnouncementDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /announcements
+            Method: DELETE
+    Metadata: *lambda-build
+  DeleteChoreFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-delete-chore"
+      CodeUri: functions/delete-chore/
+      Handler: handler.handler
+      Description: Delete chore
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ChoreDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /chores
+            Method: DELETE
+    Metadata: *lambda-build
+  DeleteShoppingListFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-delete-shopping-list"
+      CodeUri: functions/delete-shopping-list/
+      Handler: handler.handler
+      Description: Delete shopping list and all its items
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ShoppingListDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /shopping/list
+            Method: DELETE
+    Metadata: *lambda-build
+  DeleteShoppingItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-delete-shopping-item"
+      CodeUri: functions/delete-shopping-item/
+      Handler: handler.handler
+      Description: Delete shopping item
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ShoppingItemDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /shopping/item
+            Method: DELETE
+    Metadata: *lambda-build
+  DeleteExpenseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-delete-expense"
+      CodeUri: functions/delete-expense/
+      Handler: handler.handler
+      Description: Delete expense
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ExpenseDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /expenses
+            Method: DELETE
+    Metadata: *lambda-build
+  DeleteHouseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-delete-house"
+      CodeUri: functions/delete-house/
+      Handler: handler.handler
+      Description: Delete house and all related data
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        HouseDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /house
+            Method: DELETE
+    Metadata: *lambda-build
 Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL

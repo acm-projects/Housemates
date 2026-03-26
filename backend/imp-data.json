@@ -1,0 +1,1 @@
+{"Item": {"PK": {"S": "HOUSE#H001"}, "SK": {"S": "METADATA"}, "name": {"S": "The Maple Street House"}, "invite_code": {"S": "XK92P"}, "expenses_bucket": {"S": "s3://maple-house-h001-expenses"}, "created_at": {"S": "2025-01-15T00:00:00Z"}, "created_by": {"S": "U001"}}}

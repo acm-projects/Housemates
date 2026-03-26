@@ -214,11 +214,7 @@ export default function TaskPage() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <Pressable onPress={() => router.replace('/')} style={styles.iconButton}>
-<<<<<<< HEAD
-            <Ionicons name="chevron-back" size={23} color={COLORS.primary} />
-=======
-            <Ionicons name="chevron-back" size={23} color="#1d2030" />
->>>>>>> 651e2acdcb42e3816e228cd85993702b449e4183
+          <Ionicons name="chevron-back" size={23} color={COLORS.primary} />
           </Pressable>
           <Text style={styles.title}>Today's Tasks</Text>
           <Ionicons name="notifications" size={22} color={COLORS.primary} />

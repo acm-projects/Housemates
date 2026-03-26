@@ -37,15 +37,10 @@ export default function SettingsScreen() {
 
         {/* Header */}
         <View style={styles.topRow}>
-<<<<<<< HEAD
-          <Pressable style={styles.topIconButton} onPress={() => router.back()}>
-            <View style={styles.backBtn}>
-              <Ionicons name="chevron-back" size={20} color={COLORS.primary} />
-            </View>
-=======
-          <Pressable style={styles.topIconButton} onPress={() => router.replace('/')}>
-            <Ionicons name="chevron-back" size={23} color="#1d2030" />
->>>>>>> 651e2acdcb42e3816e228cd85993702b449e4183
+        <Pressable style={styles.topIconButton} onPress={() => router.back()}>
+        <View style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={20} color={COLORS.primary} />
+        </View>
           </Pressable>
           <View style={styles.titleWrap}>
             <Text style={styles.title}>Settings</Text>

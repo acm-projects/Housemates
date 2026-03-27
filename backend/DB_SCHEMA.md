@@ -33,18 +33,18 @@ All tables use AWS DynamoDB. Types are DynamoDB types (String, Number, Boolean, 
 
 ## Expenses_HM
 
-| Attribute  | Type                  | Key                               |
-| ---------- | --------------------- | --------------------------------- |
-| expense_id | String                | Partition key                     |
-| add_date   | String                |                                   |
-| creator    | String                |                                   |
-| due_date   | String                |                                   |
-| house_id   | String                |                                   |
-| is_urgent  | Boolean               |                                   |
-| name       | String                |                                   |
-| owers      | Map\<String, Number\> | map of user and how much they owe |
-| payers     | List\<String\>        |                                   |
-| price      | Number                |                                   |
+| Attribute  | Type                  | Key                                    |
+| ---------- | --------------------- | -------------------------------------- |
+| expense_id | String                | Partition key                          |
+| add_date   | String                |                                        |
+| creator    | String                |                                        |
+| due_date   | String                |                                        |
+| house_id   | String                |                                        |
+| is_urgent  | Boolean               |                                        |
+| name       | String                |                                        |
+| owers      | Map\<String, Number\> | map of user and how much they owe      |
+| payers     | Map\<String, Number\> | map of user and how much they are owed |
+| price      | Number                |                                        |
 
 ---
 

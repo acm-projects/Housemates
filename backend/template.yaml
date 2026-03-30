@@ -635,6 +635,25 @@ Resources:
             Path: /house
             Method: DELETE
     Metadata: *lambda-build
+  SimplifyExpenseHouseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-simplify-expense-house"
+      CodeUri: functions/simplify-expense-house/
+      Handler: handler.handler
+      Description: Simplify and resolve debts for a house
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ExpenseSimplifyPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /expenses/simplify
+            Method: POST
+    Metadata: *lambda-build
+
 Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL

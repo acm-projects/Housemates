@@ -2,7 +2,11 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
-import { DynamoDBDocumentClient, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  DeleteCommand,
+  GetCommand,
+} from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient({});
 const dc = DynamoDBDocumentClient.from(client);
@@ -25,17 +29,39 @@ export const handler = async (
     };
   }
 
+  const { Item: expense } = await dc.send(
+    new GetCommand({
+      TableName: "Expenses_HM",
+      Key: { expense_id },
+    }),
+  );
+
+  if (expense?.expenses?.length) {
+    await Promise.all(
+      (expense.expenses as string[]).map((ref_id) =>
+        dc.send(
+          new DeleteCommand({
+            TableName: "Expenses_HM",
+            Key: { expense_id: ref_id },
+          }),
+        ),
+      ),
+    );
+  }
+
   await dc.send(
     new DeleteCommand({
       TableName: "Expenses_HM",
-      Key: {
-        expense_id,
-      },
+      Key: { expense_id },
     }),
   );
 
   return {
     statusCode: 200,
-    body: JSON.stringify({ message: "Expense deleted", expense_id }),
+    body: JSON.stringify({
+      message: "Expense deleted",
+      expense_id,
+      was_simplified: expense?.expenses?.length,
+    }),
   };
 };

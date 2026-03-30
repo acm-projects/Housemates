@@ -2,6 +2,16 @@ import * as React from "react";
 import { useState } from "react";
 import { apiPost } from "@/utils/api";
 import { useRouter, Link, Redirect } from 'expo-router';
+import { 
+  CognitoIdentityProviderClient, 
+  SignUpCommand 
+} from "@aws-sdk/client-cognito-identity-provider";
+
+// AWS Constants
+const REGION = "us-east-2";
+const CLIENT_ID = "22fiai4ujv7oi54lk6o6btq4vu";
+
+const cognitoClient = new CognitoIdentityProviderClient({ region: REGION });
 import {
   View,
   Text,
@@ -35,14 +45,23 @@ export const COLORS = {
   white:        '#FFFFFF',
 }
 
-// --- API ---
-async function signUp(userData: { name: string; email: string; password: string }): Promise<string> {
+async function signUp(userData: { name: string; email: string; password: string }): Promise<any> {
+  const command = new SignUpCommand({
+    ClientId: CLIENT_ID,
+    Username: userData.email, // Cognito uses email as the username usually
+    Password: userData.password,
+    UserAttributes: [
+      { Name: "email", Value: userData.email },
+      { Name: "name", Value: userData.name },
+    ],
+  });
+
   try {
-    const result = await apiPost("/user/signup", userData);
-    console.log(result);
-    return result;
+    const response = await cognitoClient.send(command);
+    console.log("Cognito Signup Success:", response);
+    return response;
   } catch (err) {
-    console.error("Error signing up:", err);
+    console.error("Cognito Signup Error:", err);
     throw err;
   }
 }
@@ -89,10 +108,14 @@ export default function SignUpScreen({
   const [password, setPassword] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  const handleSignUp = () => {
-    signUp({ name, email, password });
-    onSignUp?.({ name, email, password });
-    router.replace('/home')
+  const handleSignUp = async () => {
+    try {
+       await signUp({ name, email, password });
+      onSignUp?.({ name, email, password });
+      router.replace('/home'); 
+    } catch (error: any) {
+      alert(error.message || "An error occurred during sign up");
+    }
   };
 
   return (

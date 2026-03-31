@@ -110,9 +110,12 @@ export default function SignUpScreen({
 
   const handleSignUp = async () => {
     try {
-       await signUp({ name, email, password });
-      onSignUp?.({ name, email, password });
-      router.replace('/home'); 
+      await signUp({ name, email, password });
+      
+      router.push({
+        pathname: '/verify',
+        params: { email: email }
+      });
     } catch (error: any) {
       alert(error.message || "An error occurred during sign up");
     }

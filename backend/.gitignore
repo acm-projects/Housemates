@@ -4,4 +4,4 @@ dist/
 samconfig.toml
 *.env
 .env*
-package-lock.json
+*package-lock.json

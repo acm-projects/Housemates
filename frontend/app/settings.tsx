@@ -1,12 +1,17 @@
+import { apiGetWithBody, apiPut, extractDynamoItems } from '@/utils/api';
+import { API_USER_ID } from './apiConfig';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   type ViewStyle,
   View,
 } from 'react-native';
@@ -30,6 +35,71 @@ export default function SettingsScreen() {
   const router = useRouter();
   const [taskReminders,    setTaskReminders]    = useState(false);
   const [paymentReminders, setPaymentReminders] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profilePfp, setProfilePfp] = useState('');
+  const [profileSettingsJson, setProfileSettingsJson] = useState('{}');
+  const [profileBusy, setProfileBusy] = useState(false);
+
+  const loadProfile = useCallback(async () => {
+    setProfileBusy(true);
+    try {
+      const data = await apiGetWithBody('/users', { user_id: API_USER_ID });
+      const rows = extractDynamoItems(data);
+      const u = rows[0];
+      if (!u) return;
+      setProfileName(String(u.name ?? ''));
+      setProfileEmail(String(u.email ?? ''));
+      setProfilePhone(String(u.phone_number ?? ''));
+      setProfilePfp(String(u.pfp_url ?? ''));
+      const s = u.settings;
+      setProfileSettingsJson(
+        s != null && typeof s === 'object' ? JSON.stringify(s, null, 2) : '{}',
+      );
+    } catch (e) {
+      Alert.alert('GET /users failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setProfileBusy(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  async function saveProfile() {
+    let settings: unknown = undefined;
+    const raw = profileSettingsJson.trim();
+    if (raw) {
+      try {
+        settings = JSON.parse(raw);
+      } catch {
+        Alert.alert('Invalid JSON', 'Fix the settings JSON before saving.');
+        return;
+      }
+    }
+    const body: Record<string, unknown> = { user_id: API_USER_ID };
+    if (profileName.trim() !== '') body.name = profileName.trim();
+    if (profileEmail.trim() !== '') body.email = profileEmail.trim();
+    if (profilePhone.trim() !== '') body.phone_number = profilePhone.trim();
+    if (profilePfp.trim() !== '') body.pfp_url = profilePfp.trim();
+    if (settings !== undefined) body.settings = settings;
+    const updateKeys = Object.keys(body).filter((k) => k !== 'user_id');
+    if (updateKeys.length === 0) {
+      Alert.alert('Nothing to save', 'Change at least one field (or set settings JSON).');
+      return;
+    }
+    setProfileBusy(true);
+    try {
+      await apiPut('/users', body);
+      Alert.alert('Saved', 'Profile updated (PUT /users).');
+    } catch (e) {
+      Alert.alert('PUT /users failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setProfileBusy(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -60,6 +130,84 @@ export default function SettingsScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Profile — GET /users + PUT /users */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconBox}>
+                <Ionicons name="person-circle-outline" size={22} color={COLORS.secondary} />
+              </View>
+              <Text style={styles.sectionTitle}>Your profile</Text>
+            </View>
+            <Text style={styles.profileHint}>
+              GET /users and PUT /users · user_id: {API_USER_ID}
+            </Text>
+            <Text style={styles.profileLabel}>Name</Text>
+            <TextInput
+              style={styles.profileInput}
+              value={profileName}
+              onChangeText={setProfileName}
+              placeholder="Display name"
+              placeholderTextColor={COLORS.textMuted}
+            />
+            <Text style={styles.profileLabel}>Email</Text>
+            <TextInput
+              style={styles.profileInput}
+              value={profileEmail}
+              onChangeText={setProfileEmail}
+              placeholder="Email"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            <Text style={styles.profileLabel}>Phone</Text>
+            <TextInput
+              style={styles.profileInput}
+              value={profilePhone}
+              onChangeText={setProfilePhone}
+              placeholder="Phone number"
+              placeholderTextColor={COLORS.textMuted}
+              keyboardType="phone-pad"
+            />
+            <Text style={styles.profileLabel}>Profile photo URL</Text>
+            <TextInput
+              style={styles.profileInput}
+              value={profilePfp}
+              onChangeText={setProfilePfp}
+              placeholder="https://…"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="none"
+            />
+            <Text style={styles.profileLabel}>Settings (JSON object)</Text>
+            <TextInput
+              style={[styles.profileInput, styles.profileJsonInput]}
+              value={profileSettingsJson}
+              onChangeText={setProfileSettingsJson}
+              placeholder="{}"
+              placeholderTextColor={COLORS.textMuted}
+              multiline
+            />
+            <View style={styles.profileActions}>
+              <Pressable
+                style={styles.profileBtnSecondary}
+                onPress={loadProfile}
+                disabled={profileBusy}
+              >
+                {profileBusy ? (
+                  <ActivityIndicator color={COLORS.primary} />
+                ) : (
+                  <Text style={styles.profileBtnSecondaryText}>Reload</Text>
+                )}
+              </Pressable>
+              <Pressable
+                style={styles.profileBtnPrimary}
+                onPress={saveProfile}
+                disabled={profileBusy}
+              >
+                <Text style={styles.profileBtnPrimaryText}>Save profile</Text>
+              </Pressable>
+            </View>
+          </View>
+
           {/* Notification Settings Card */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
@@ -212,6 +360,69 @@ const styles = StyleSheet.create({
   },
   sectionTitle:       { fontSize: 17, fontWeight: '700', color: COLORS.textDark },
   memberSectionTitle: { fontSize: 17, fontWeight: '700', color: COLORS.white },
+
+  profileHint: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginBottom: 12,
+    lineHeight: 16,
+  },
+  profileLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.primary,
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  profileInput: {
+    borderWidth: 1,
+    borderColor: `${COLORS.border}80`,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: COLORS.textDark,
+    backgroundColor: COLORS.white,
+    marginBottom: 10,
+  },
+  profileJsonInput: {
+    minHeight: 72,
+    textAlignVertical: 'top',
+    fontSize: 13,
+  },
+  profileActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  profileBtnSecondary: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: COLORS.secondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: `${COLORS.secondary}12`,
+  },
+  profileBtnSecondaryText: {
+    fontWeight: '700',
+    color: COLORS.primary,
+    fontSize: 15,
+  },
+  profileBtnPrimary: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.secondary,
+  },
+  profileBtnPrimaryText: {
+    fontWeight: '700',
+    color: COLORS.white,
+    fontSize: 15,
+  },
 
   // Toggle rows
   settingsList: { gap: 14 },

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { apiPost } from "@/utils/api"
+import { API_HOUSE_ID, API_USER_ID } from './apiConfig'
 import {
   View,
   Text,
@@ -30,7 +31,13 @@ type Props = {
 // --- API ---
 async function saveTask(data: { taskName: string; urgent: boolean; time: string }) {
   try {
-    const result = await apiPost('/tasks/add', data)
+    const result = await apiPost('/chores', {
+      house_id: API_HOUSE_ID,
+      name: data.taskName,
+      description: data.urgent ? 'Urgent' : `Due ${data.time}`,
+      rotation: [API_USER_ID],
+      rrule: 'FREQ=WEEKLY',
+    })
     console.log(result)
   } catch (err) {
     console.error('Error saving task:', err)

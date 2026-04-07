@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { apiPost } from "@/utils/api"
+import { API_HOUSE_ID } from './apiConfig'
 import {
   View,
   Text,
@@ -22,7 +23,10 @@ type Props = {
 // --- API ---
 async function saveList(data: { listName: string; price: string; date: string }) {
   try {
-    const result = await apiPost('/lists/add', data)
+    const result = await apiPost('/shopping/list', {
+      name: data.listName,
+      house_id: API_HOUSE_ID,
+    })
     console.log(result)
   } catch (err) {
     console.error('Error saving list:', err)

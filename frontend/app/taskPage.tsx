@@ -1,15 +1,20 @@
-import { AntDesign, Ionicons } from '@expo/vector-icons'
-import { useMemo, useState } from 'react'
+import { Ionicons } from '@expo/vector-icons'
+import { apiDelete, apiGetWithBody, apiPost, apiPut, extractDynamoItems } from '@/utils/api'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'expo-router'
 import {
+  ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native'
+import { API_HOUSE_ID, API_USER_ID } from './apiConfig'
 import { AppBottomNav } from '../components/app-bottom-nav'
 
 type Filter = 'All' | 'Weekly' | 'In Progress' | 'Completed'
@@ -185,7 +190,46 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 10,
   },
-}); 
+  apiRow: {
+    marginTop: 20,
+    padding: 12,
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 8,
+  },
+  apiLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
+  apiInput: {
+    borderWidth: 1,
+    borderColor: COLORS.accent,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: COLORS.white,
+    color: COLORS.textDark,
+  },
+  apiButton: {
+    backgroundColor: COLORS.secondary,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  apiButtonDanger: { backgroundColor: '#B0524A' },
+  apiButtonText: { color: COLORS.white, fontWeight: '700' },
+  fetchBox: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.accent,
+    maxHeight: 160,
+  },
+  fetchBoxTitle: { fontSize: 12, fontWeight: '700', color: COLORS.secondary, marginBottom: 6 },
+  fetchBoxText: { fontSize: 11, color: COLORS.textDark },
+})
+
 export default function TaskPage() {
   const router = useRouter()
   const today = useMemo(() => new Date(), [])
@@ -193,6 +237,113 @@ export default function TaskPage() {
   const [selectedDateId, setSelectedDateId] = useState(toDateKey(today))
   const [tasks, setTasks] = useState(() => buildSeedTasks(today))
   const [filter, setFilter] = useState<Filter>('All')
+  const [choreIdToDelete, setChoreIdToDelete] = useState('')
+  const [apiBusy, setApiBusy] = useState(false)
+  const [choresHousePreview, setChoresHousePreview] = useState('(not loaded)')
+  const [choresUserPreview, setChoresUserPreview] = useState('(not loaded)')
+  const [updateChoreId, setUpdateChoreId] = useState('')
+  const [updateChoreName, setUpdateChoreName] = useState('')
+
+  const loadChoresFromApi = useCallback(async () => {
+    setApiBusy(true)
+    try {
+      const [houseRes, userRes] = await Promise.all([
+        apiGetWithBody('/chores/house', { house_id: API_HOUSE_ID }),
+        apiGetWithBody('/chores/user', { user_id: API_USER_ID }),
+      ])
+      const houseItems = extractDynamoItems(houseRes)
+      setChoresHousePreview(
+        JSON.stringify(
+          houseItems.map((c) => ({
+            chore_id: c.chore_id,
+            name: c.name,
+            house_id: c.house_id,
+          })),
+          null,
+          2,
+        ).slice(0, 2000),
+      )
+      const userItems = extractDynamoItems(userRes)
+      setChoresUserPreview(
+        JSON.stringify(
+          userItems.map((c) => ({
+            chore_id: c.chore_id,
+            name: c.name,
+            current_user: c.current_user,
+          })),
+          null,
+          2,
+        ).slice(0, 2000),
+      )
+    } catch (e) {
+      Alert.alert('Load chores failed', e instanceof Error ? e.message : 'Unknown error')
+    } finally {
+      setApiBusy(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadChoresFromApi()
+  }, [loadChoresFromApi])
+
+  async function updateChoreViaApi() {
+    const chore_id = updateChoreId.trim()
+    const name = updateChoreName.trim()
+    if (!chore_id || !name) {
+      Alert.alert('PUT /chores', 'Enter chore_id and new name.')
+      return
+    }
+    setApiBusy(true)
+    try {
+      await apiPut('/chores', { chore_id, house_id: API_HOUSE_ID, name })
+      Alert.alert('Updated', 'Chore saved.')
+      await loadChoresFromApi()
+    } catch (e) {
+      Alert.alert('Update chore failed', e instanceof Error ? e.message : 'Unknown error')
+    } finally {
+      setApiBusy(false)
+    }
+  }
+
+  async function createChoreViaApi() {
+    setApiBusy(true)
+    try {
+      const res = (await apiPost('/chores', {
+        house_id: API_HOUSE_ID,
+        name: 'Chore from tasks',
+        description: 'Created from the tasks screen',
+        rotation: [API_USER_ID],
+        rrule: 'FREQ=WEEKLY',
+      })) as { chore_id?: string; message?: string }
+      Alert.alert('Chore created', res.chore_id ?? res.message ?? 'OK')
+      await loadChoresFromApi()
+    } catch (e) {
+      Alert.alert('Create chore failed', e instanceof Error ? e.message : 'Unknown error')
+    } finally {
+      setApiBusy(false)
+    }
+  }
+
+  async function deleteChoreViaApi() {
+    if (!choreIdToDelete.trim()) {
+      Alert.alert('Missing id', 'Enter a chore_id to delete.')
+      return
+    }
+    setApiBusy(true)
+    try {
+      await apiDelete('/chores', {
+        house_id: API_HOUSE_ID,
+        chore_id: choreIdToDelete.trim(),
+      })
+      Alert.alert('Deleted', 'Chore removed.')
+      setChoreIdToDelete('')
+      await loadChoresFromApi()
+    } catch (e) {
+      Alert.alert('Delete chore failed', e instanceof Error ? e.message : 'Unknown error')
+    } finally {
+      setApiBusy(false)
+    }
+  }
 
   const visibleTasks = useMemo(() => {
     const selectedDate = new Date(selectedDateId)
@@ -256,6 +407,72 @@ export default function TaskPage() {
               </View>
             )
           })}
+        </View>
+
+        <View style={styles.apiRow}>
+          <Text style={styles.apiLabel}>GET /chores/house · GET /chores/user</Text>
+          <Pressable style={styles.apiButton} onPress={loadChoresFromApi} disabled={apiBusy}>
+            {apiBusy ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={styles.apiButtonText}>Refresh chore lists</Text>
+            )}
+          </Pressable>
+          <ScrollView style={styles.fetchBox} nestedScrollEnabled>
+            <Text style={styles.fetchBoxTitle}>House</Text>
+            <Text style={styles.fetchBoxText}>{choresHousePreview}</Text>
+            <Text style={[styles.fetchBoxTitle, { marginTop: 8 }]}>Current user</Text>
+            <Text style={styles.fetchBoxText}>{choresUserPreview}</Text>
+          </ScrollView>
+          <Text style={styles.apiLabel}>PUT /chores</Text>
+          <TextInput
+            style={styles.apiInput}
+            placeholder="chore_id"
+            placeholderTextColor={COLORS.textMuted}
+            value={updateChoreId}
+            onChangeText={setUpdateChoreId}
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={styles.apiInput}
+            placeholder="new name"
+            placeholderTextColor={COLORS.textMuted}
+            value={updateChoreName}
+            onChangeText={setUpdateChoreName}
+          />
+          <Pressable style={styles.apiButton} onPress={updateChoreViaApi} disabled={apiBusy}>
+            <Text style={styles.apiButtonText}>Update chore</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.apiRow}>
+          <Text style={styles.apiLabel}>Chores API (uses apiConfig house / user ids)</Text>
+          <Pressable
+            style={styles.apiButton}
+            onPress={createChoreViaApi}
+            disabled={apiBusy}
+          >
+            {apiBusy ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={styles.apiButtonText}>POST /chores — create sample chore</Text>
+            )}
+          </Pressable>
+          <TextInput
+            style={styles.apiInput}
+            placeholder="chore_id to delete"
+            placeholderTextColor={COLORS.textMuted}
+            value={choreIdToDelete}
+            onChangeText={setChoreIdToDelete}
+            autoCapitalize="none"
+          />
+          <Pressable
+            style={[styles.apiButton, styles.apiButtonDanger]}
+            onPress={deleteChoreViaApi}
+            disabled={apiBusy}
+          >
+            <Text style={styles.apiButtonText}>DELETE /chores</Text>
+          </Pressable>
         </View>
       </ScrollView>
       <Pressable

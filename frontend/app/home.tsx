@@ -1,14 +1,19 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { apiDelete, apiGetWithBody, apiPost, apiPut, extractDynamoItems } from '@/utils/api';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
+import { API_HOUSE_ID, API_USER_ID } from './apiConfig';
 import { AppBottomNav } from './AppBottomNav';
 
 const COLORS = {
@@ -42,17 +47,140 @@ type Announcement = {
   id: string;
   message: string;
   time: string;
+  announcement_id?: string;
 };
 
-const announcements: Announcement[] = [
+const seedAnnouncements: Announcement[] = [
   { id: 'a-1', message: "I'm gonna have guests over at 7PM...", time: '1:09 PM' },
-  { id: 'a-2', message: 'Does anyone have any lettuce?',        time: '2:40 AM' },
+  { id: 'a-2', message: 'Does anyone have any lettuce?', time: '2:40 AM' },
 ];
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [tasks, setTasks]                       = useState(initialTasks);
+  const [tasks, setTasks] = useState(initialTasks);
   const [announcementsOpen, setAnnouncementsOpen] = useState(true);
+  const [announcementFeed, setAnnouncementFeed] = useState<Announcement[]>(seedAnnouncements);
+  const [newAnnouncementText, setNewAnnouncementText] = useState('');
+  const [announcementBusy, setAnnouncementBusy] = useState(false);
+  const [updateAnnouncementId, setUpdateAnnouncementId] = useState('');
+  const [updateAnnouncementText, setUpdateAnnouncementText] = useState('');
+
+  const loadAnnouncements = useCallback(async () => {
+    setAnnouncementBusy(true);
+    try {
+      const data = await apiGetWithBody('/announcements', { house_id: API_HOUSE_ID });
+      const rows = extractDynamoItems(data);
+      if (rows.length === 0) return;
+      const mapped: Announcement[] = rows.map((it) => {
+        const announcement_id = String(it.announcement_id ?? '');
+        const text = String(it.text ?? '');
+        const dateRaw = it.date;
+        const time =
+          typeof dateRaw === 'string'
+            ? new Date(dateRaw).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+              })
+            : '';
+        return {
+          id: announcement_id || `a-${text.slice(0, 8)}`,
+          announcement_id: announcement_id || undefined,
+          message: text,
+          time: time || '—',
+        };
+      });
+      setAnnouncementFeed(mapped);
+    } catch (e) {
+      Alert.alert('Load announcements failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setAnnouncementBusy(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAnnouncements();
+  }, [loadAnnouncements]);
+
+  async function saveAnnouncementUpdate() {
+    const announcement_id = updateAnnouncementId.trim();
+    const text = updateAnnouncementText.trim();
+    if (!announcement_id || !text) {
+      Alert.alert('Update', 'Enter announcement_id and new text.');
+      return;
+    }
+    setAnnouncementBusy(true);
+    try {
+      await apiPut('/announcements', {
+        house_id: API_HOUSE_ID,
+        announcement_id,
+        text,
+        date: new Date().toISOString(),
+      });
+      Alert.alert('Updated', 'Announcement saved.');
+      await loadAnnouncements();
+    } catch (e) {
+      Alert.alert('Update failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setAnnouncementBusy(false);
+    }
+  }
+
+  async function postAnnouncement() {
+    const text = newAnnouncementText.trim();
+    if (!text) {
+      Alert.alert('Empty message', 'Type something to post.');
+      return;
+    }
+    setAnnouncementBusy(true);
+    try {
+      const res = (await apiPost('/announcements', {
+        house_id: API_HOUSE_ID,
+        user_id: API_USER_ID,
+        text,
+      })) as { announcement_id?: string; message?: string };
+      const now = new Date();
+      const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      setAnnouncementFeed((prev) => [
+        {
+          id: res.announcement_id ?? `local-${Date.now()}`,
+          announcement_id: res.announcement_id,
+          message: text,
+          time,
+        },
+        ...prev,
+      ]);
+      setNewAnnouncementText('');
+      Alert.alert('Posted', res.message ?? 'Announcement created');
+      await loadAnnouncements();
+    } catch (e) {
+      Alert.alert('Post failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setAnnouncementBusy(false);
+    }
+  }
+
+  async function removeAnnouncement(item: Announcement) {
+    if (!item.announcement_id) {
+      Alert.alert(
+        'Local only',
+        'This row was not created via the API, so there is no announcement_id to delete.',
+      );
+      return;
+    }
+    setAnnouncementBusy(true);
+    try {
+      await apiDelete('/announcements', {
+        house_id: API_HOUSE_ID,
+        announcement_id: item.announcement_id,
+      });
+      setAnnouncementFeed((prev) => prev.filter((a) => a.id !== item.id));
+      await loadAnnouncements();
+    } catch (e) {
+      Alert.alert('Delete failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setAnnouncementBusy(false);
+    }
+  }
 
   const toggleTask = (id: string) => {
     setTasks((prev) =>
@@ -107,37 +235,103 @@ export default function HomeScreen() {
         </View>
 
         {/* Announcements */}
-        <Pressable
-          style={styles.announcementsHeader}
-          onPress={() => setAnnouncementsOpen((prev) => !prev)}
-        >
-          <Text style={styles.announcementsTitle}>Announcements</Text>
-          <View style={styles.chevronBox}>
-            <Ionicons
-              name={announcementsOpen ? 'chevron-down-outline' : 'chevron-forward-outline'}
-              size={20}
-              color={COLORS.primary}
-            />
-          </View>
-        </Pressable>
-
-        {announcementsOpen &&
-          announcements.map((item, index) => (
-            <View
-              key={item.id}
-              style={[styles.announcementCard, index === 0 && styles.announcementCardPrimary]}
-            >
-              <View style={styles.announcementAvatar}>
-                <Text style={styles.avatarText}>?</Text>
-              </View>
-              <View style={styles.announcementTextWrap}>
-                <Text style={styles.announcementMessage} numberOfLines={1}>
-                  {item.message}
-                </Text>
-                <Text style={styles.announcementTime}>{item.time}</Text>
-              </View>
+        <View style={styles.announcementsHeader}>
+          <Pressable
+            style={styles.announcementsHeaderToggle}
+            onPress={() => setAnnouncementsOpen((prev) => !prev)}
+          >
+            <Text style={styles.announcementsTitle}>Announcements</Text>
+            <View style={styles.chevronBox}>
+              <Ionicons
+                name={announcementsOpen ? 'chevron-down-outline' : 'chevron-forward-outline'}
+                size={20}
+                color={COLORS.primary}
+              />
             </View>
-          ))}
+          </Pressable>
+          <Pressable style={styles.refreshAnnouncementsHit} onPress={loadAnnouncements} hitSlop={8}>
+            <Ionicons name="refresh-outline" size={22} color={COLORS.secondary} />
+          </Pressable>
+        </View>
+
+        {announcementsOpen && (
+          <>
+            <View style={styles.composeRow}>
+              <TextInput
+                style={styles.composeInput}
+                placeholder="New announcement…"
+                placeholderTextColor={COLORS.textMuted}
+                value={newAnnouncementText}
+                onChangeText={setNewAnnouncementText}
+                multiline
+              />
+              <Pressable
+                style={styles.composeButton}
+                onPress={postAnnouncement}
+                disabled={announcementBusy}
+              >
+                {announcementBusy ? (
+                  <ActivityIndicator color={COLORS.white} size="small" />
+                ) : (
+                  <Text style={styles.composeButtonText}>Post</Text>
+                )}
+              </Pressable>
+            </View>
+
+            <View style={styles.updateRow}>
+              <Text style={styles.updateLabel}>PUT /announcements</Text>
+              <TextInput
+                style={styles.updateInput}
+                placeholder="announcement_id"
+                placeholderTextColor={COLORS.textMuted}
+                value={updateAnnouncementId}
+                onChangeText={setUpdateAnnouncementId}
+                autoCapitalize="none"
+              />
+              <TextInput
+                style={styles.updateInput}
+                placeholder="New text"
+                placeholderTextColor={COLORS.textMuted}
+                value={updateAnnouncementText}
+                onChangeText={setUpdateAnnouncementText}
+              />
+              <Pressable
+                style={styles.updateButton}
+                onPress={saveAnnouncementUpdate}
+                disabled={announcementBusy}
+              >
+                <Text style={styles.composeButtonText}>Save update</Text>
+              </Pressable>
+            </View>
+
+            {announcementFeed.map((item, index) => (
+              <Pressable
+                key={item.id}
+                style={[styles.announcementCard, index === 0 && styles.announcementCardPrimary]}
+                onPress={() => {
+                  if (item.announcement_id) {
+                    setUpdateAnnouncementId(item.announcement_id);
+                    setUpdateAnnouncementText(item.message);
+                  }
+                }}
+                onLongPress={() => removeAnnouncement(item)}
+              >
+                <View style={styles.announcementAvatar}>
+                  <Text style={styles.avatarText}>?</Text>
+                </View>
+                <View style={styles.announcementTextWrap}>
+                  <Text style={styles.announcementMessage} numberOfLines={2}>
+                    {item.message}
+                  </Text>
+                  <Text style={styles.announcementTime}>
+                    {item.time}
+                    {item.announcement_id ? ' · tap to edit ids · long-press delete' : ''}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
+          </>
+        )}
 
         {/* Progress / study card */}
         <View style={styles.studyCard}>
@@ -220,10 +414,74 @@ const styles = StyleSheet.create({
 
   // Announcements
   announcementsHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  announcementsHeaderToggle: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   announcementsTitle: { fontSize: 20, fontWeight: '800', color: COLORS.textDark },
+  refreshAnnouncementsHit: { padding: 4, marginRight: 4 },
+  updateRow: {
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: `${COLORS.cardBg}cc`,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: `${COLORS.border}50`,
+    gap: 8,
+  },
+  updateLabel: { fontSize: 11, fontWeight: '700', color: COLORS.secondary },
+  updateInput: {
+    borderWidth: 1,
+    borderColor: `${COLORS.border}60`,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: COLORS.white,
+    color: COLORS.textDark,
+    fontSize: 14,
+  },
+  updateButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  composeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
+    marginBottom: 12,
+  },
+  composeInput: {
+    flex: 1,
+    minHeight: 44,
+    maxHeight: 100,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: `${COLORS.border}60`,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: COLORS.white,
+    color: COLORS.textDark,
+    fontSize: 15,
+  },
+  composeButton: {
+    backgroundColor: COLORS.secondary,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    minWidth: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  composeButtonText: { color: COLORS.white, fontWeight: '700', fontSize: 15 },
   chevronBox: {
     width: 32, height: 32, borderRadius: 10,
     backgroundColor: COLORS.cardBg,

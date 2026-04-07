@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { apiPost } from "@/utils/api";
+import { apiDelete, apiGetWithBody, apiPost, apiPut, extractDynamoItems } from "@/utils/api";
+import { API_HOUSE_ID, API_USER_ID } from "./apiConfig";
 import {
   View,
   Text,
@@ -10,6 +11,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -42,13 +45,111 @@ export default function JoinHouseScreen({
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [focused, setFocused] = useState(false);
+  const [newHouseName, setNewHouseName] = useState('');
+  const [createUserId, setCreateUserId] = useState(API_USER_ID);
+  const [houseIdToDelete, setHouseIdToDelete] = useState('');
+  const [houseApiBusy, setHouseApiBusy] = useState(false);
+  const [updateHouseId, setUpdateHouseId] = useState('');
+  const [updateHouseName, setUpdateHouseName] = useState('');
+  const [addMemberHouseId, setAddMemberHouseId] = useState('');
+  const [addMemberUserId, setAddMemberUserId] = useState(API_USER_ID);
+  const [usersHouseIdForGet, setUsersHouseIdForGet] = useState(API_HOUSE_ID);
+  const [usersHousePreview, setUsersHousePreview] = useState('');
 
-  async function joinHouse(code: string) {
+  async function fetchUsersInHouse() {
+    const house_id = usersHouseIdForGet.trim();
+    if (!house_id) {
+      Alert.alert('GET /users/house', 'Enter a house_id.');
+      return;
+    }
+    setHouseApiBusy(true);
     try {
-      const result = await apiPost("/house/join", { inviteCode: code });
-      console.log(result);
-    } catch (err) {
-      console.error("Error joining house:", err);
+      const data = await apiGetWithBody('/users/house', { house_id });
+      const users = extractDynamoItems(data);
+      setUsersHousePreview(JSON.stringify(users, null, 2).slice(0, 6000));
+    } catch (e) {
+      Alert.alert('Fetch users failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setHouseApiBusy(false);
+    }
+  }
+
+  async function createHouseApi() {
+    const name = newHouseName.trim();
+    const user_id = createUserId.trim();
+    if (!name || !user_id) {
+      Alert.alert('Missing fields', 'Enter a house name and user id.');
+      return;
+    }
+    setHouseApiBusy(true);
+    try {
+      const res = (await apiPost('/house', { name, user_id })) as {
+        id?: string;
+        message?: string;
+      };
+      Alert.alert(
+        'House created',
+        res.id ? `house id: ${res.id}` : (res.message ?? 'OK'),
+      );
+      setNewHouseName('');
+    } catch (e) {
+      Alert.alert('Create house failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setHouseApiBusy(false);
+    }
+  }
+
+  async function updateHouseApi() {
+    const id = updateHouseId.trim();
+    const name = updateHouseName.trim();
+    if (!id || !name) {
+      Alert.alert('PUT /house', 'Enter house id and new name.');
+      return;
+    }
+    setHouseApiBusy(true);
+    try {
+      await apiPut('/house', { id, name });
+      Alert.alert('Updated', 'House name saved.');
+    } catch (e) {
+      Alert.alert('Update house failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setHouseApiBusy(false);
+    }
+  }
+
+  async function addUserToHouseApi() {
+    const id = addMemberHouseId.trim();
+    const user_id = addMemberUserId.trim();
+    if (!id || !user_id) {
+      Alert.alert('PUT /house/user', 'Enter house id and user_id to append.');
+      return;
+    }
+    setHouseApiBusy(true);
+    try {
+      await apiPut('/house/user', { id, user_id });
+      Alert.alert('Member added', 'User appended to house users list.');
+    } catch (e) {
+      Alert.alert('Add member failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setHouseApiBusy(false);
+    }
+  }
+
+  async function deleteHouseApi() {
+    const house_id = houseIdToDelete.trim();
+    if (!house_id) {
+      Alert.alert('Missing id', 'Enter house_id to delete.');
+      return;
+    }
+    setHouseApiBusy(true);
+    try {
+      await apiDelete('/house', { house_id });
+      Alert.alert('Deleted', 'House and related data removed.');
+      setHouseIdToDelete('');
+    } catch (e) {
+      Alert.alert('Delete house failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setHouseApiBusy(false);
     }
   }
 
@@ -57,7 +158,6 @@ export default function JoinHouseScreen({
       setError('Password must be at least 6 characters.');
       return;
     }
-    joinHouse(password);
     setError('');
     onJoinHouse({ password });
   };
@@ -125,6 +225,148 @@ export default function JoinHouseScreen({
           </TouchableOpacity>
 
           {/* Divider with OR */}
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>or</Text>
+            <View style={styles.orLine} />
+          </View>
+
+          <View style={styles.apiCard}>
+            <Text style={styles.cardSectionLabel}>USERS IN HOUSE (GET /users/house)</Text>
+            <Text style={styles.passwordHint}>
+              Lists Users_HM rows for this house (same index as the backend house-index).
+            </Text>
+            <TextInput
+              style={styles.apiInput}
+              placeholder="house_id"
+              placeholderTextColor={COLORS.textMuted}
+              value={usersHouseIdForGet}
+              onChangeText={setUsersHouseIdForGet}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={styles.apiCreateBtn}
+              onPress={fetchUsersInHouse}
+              disabled={houseApiBusy}
+              activeOpacity={0.85}
+            >
+              {houseApiBusy ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={styles.apiBtnText}>Fetch users in house</Text>
+              )}
+            </TouchableOpacity>
+            {usersHousePreview ? (
+              <ScrollView
+                style={styles.usersPreviewScroll}
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled"
+              >
+                <Text style={styles.usersPreviewText} selectable>
+                  {usersHousePreview}
+                </Text>
+              </ScrollView>
+            ) : null}
+
+            <Text style={[styles.cardSectionLabel, { marginTop: 20 }]}>CREATE HOUSE (POST /house)</Text>
+            <Text style={styles.passwordHint}>Creates a new house in DynamoDB and S3 bucket.</Text>
+            <TextInput
+              style={styles.apiInput}
+              placeholder="House name"
+              placeholderTextColor={COLORS.textMuted}
+              value={newHouseName}
+              onChangeText={setNewHouseName}
+              autoCapitalize="words"
+            />
+            <TextInput
+              style={styles.apiInput}
+              placeholder="user_id (Cognito sub)"
+              placeholderTextColor={COLORS.textMuted}
+              value={createUserId}
+              onChangeText={setCreateUserId}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={styles.apiCreateBtn}
+              onPress={createHouseApi}
+              disabled={houseApiBusy}
+              activeOpacity={0.85}
+            >
+              {houseApiBusy ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={styles.apiBtnText}>Create house</Text>
+              )}
+            </TouchableOpacity>
+            <Text style={[styles.cardSectionLabel, { marginTop: 16 }]}>DELETE HOUSE (DELETE /house)</Text>
+            <TextInput
+              style={styles.apiInput}
+              placeholder="house_id to delete"
+              placeholderTextColor={COLORS.textMuted}
+              value={houseIdToDelete}
+              onChangeText={setHouseIdToDelete}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={styles.apiDeleteBtn}
+              onPress={deleteHouseApi}
+              disabled={houseApiBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.apiBtnText}>Delete house</Text>
+            </TouchableOpacity>
+            <Text style={[styles.cardSectionLabel, { marginTop: 16 }]}>UPDATE HOUSE (PUT /house)</Text>
+            <TextInput
+              style={styles.apiInput}
+              placeholder="house id"
+              placeholderTextColor={COLORS.textMuted}
+              value={updateHouseId}
+              onChangeText={setUpdateHouseId}
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.apiInput}
+              placeholder="New house name"
+              placeholderTextColor={COLORS.textMuted}
+              value={updateHouseName}
+              onChangeText={setUpdateHouseName}
+              autoCapitalize="words"
+            />
+            <TouchableOpacity
+              style={styles.apiCreateBtn}
+              onPress={updateHouseApi}
+              disabled={houseApiBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.apiBtnText}>Update house name</Text>
+            </TouchableOpacity>
+            <Text style={[styles.cardSectionLabel, { marginTop: 16 }]}>ADD USER (PUT /house/user)</Text>
+            <TextInput
+              style={styles.apiInput}
+              placeholder="house id"
+              placeholderTextColor={COLORS.textMuted}
+              value={addMemberHouseId}
+              onChangeText={setAddMemberHouseId}
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.apiInput}
+              placeholder="user_id to append"
+              placeholderTextColor={COLORS.textMuted}
+              value={addMemberUserId}
+              onChangeText={setAddMemberUserId}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={styles.apiCreateBtn}
+              onPress={addUserToHouseApi}
+              disabled={houseApiBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.apiBtnText}>Add user to house</Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.orRow}>
             <View style={styles.orLine} />
             <Text style={styles.orText}>or</Text>
@@ -421,5 +663,55 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: 12,
     marginTop: 16,
+  },
+
+  apiCard: {
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 20,
+    padding: 22,
+    marginBottom: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(103, 141, 88, 0.1)',
+  },
+  apiInput: {
+    backgroundColor: '#FAFAF7',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: COLORS.textDark,
+    marginBottom: 10,
+  },
+  apiCreateBtn: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  apiDeleteBtn: {
+    backgroundColor: '#B0524A',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  apiBtnText: {
+    color: COLORS.white,
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  usersPreviewScroll: {
+    maxHeight: 160,
+    marginTop: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 10,
+  },
+  usersPreviewText: {
+    fontSize: 11,
+    color: COLORS.textDark,
   },
 });

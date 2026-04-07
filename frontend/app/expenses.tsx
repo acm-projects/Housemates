@@ -1,5 +1,6 @@
 import * as React from "react";
-import { apiPost } from "@/utils/api";
+import { apiDelete, apiGetWithBody, apiPost, apiPut, extractDynamoItems } from "@/utils/api";
+import { API_HOUSE_ID, API_USER_ID } from "./apiConfig";
 import {
   View,
   Text,
@@ -9,6 +10,10 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+  Switch,
 } from 'react-native';
 import {
   HomeIcon,
@@ -79,15 +84,6 @@ const groupedExpenses: GroupedExpenses[] = [
 ];
 
 // --- Components ---
-async function addExpense(data: { amount: number; description: string }) {
-  try {
-    const result = await apiPost("/expenses/add", data);
-    console.log(result);
-  } catch (err) {
-    console.error("Error adding expense:", err);
-  }
-}
-
 function SplitTableCard({ members }: { members: SplitMember[] }) {
   const totalOwed = members.filter(m => m.amount > 0).reduce((a, m) => a + m.amount, 0);
 
@@ -193,10 +189,167 @@ export default function ExpensesScreen({
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = React.useState('flag');
+  const [expenseName, setExpenseName] = React.useState('Groceries');
+  const [expensePrice, setExpensePrice] = React.useState('25');
+  const [expenseDue, setExpenseDue] = React.useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
+  const [expenseIdToDelete, setExpenseIdToDelete] = React.useState('');
+  const [expenseApiBusy, setExpenseApiBusy] = React.useState(false);
+  const [expenseFetchPreview, setExpenseFetchPreview] = React.useState('');
+  const [expenseIdForGet, setExpenseIdForGet] = React.useState('');
+  const [expensesUrgentOnly, setExpensesUrgentOnly] = React.useState(false);
+  const [updateExpenseId, setUpdateExpenseId] = React.useState('');
+  const [updateExpenseName, setUpdateExpenseName] = React.useState('');
 
   const handleSplitMoney = () => {
     router.push('/splitMoney');
   };
+
+  async function createExpenseApi() {
+    const price = Number.parseFloat(expensePrice);
+    if (!expenseName.trim() || Number.isNaN(price)) {
+      Alert.alert('Invalid', 'Enter a name and numeric price.');
+      return;
+    }
+    setExpenseApiBusy(true);
+    try {
+      const res = (await apiPost('/expenses', {
+        house_id: API_HOUSE_ID,
+        name: expenseName.trim(),
+        price,
+        payers: [API_USER_ID],
+        owers: [API_USER_ID],
+        creator: API_USER_ID,
+        is_urgent: false,
+        due_date: expenseDue,
+      })) as { expense_id?: string; message?: string };
+      Alert.alert('Expense created', res.expense_id ?? res.message ?? 'OK');
+    } catch (e) {
+      Alert.alert('Create failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setExpenseApiBusy(false);
+    }
+  }
+
+  async function deleteExpenseApi() {
+    const id = expenseIdToDelete.trim();
+    if (!id) {
+      Alert.alert('Missing id', 'Enter expense_id to delete.');
+      return;
+    }
+    setExpenseApiBusy(true);
+    try {
+      await apiDelete('/expenses', { expense_id: id });
+      Alert.alert('Deleted', 'Expense removed.');
+      setExpenseIdToDelete('');
+    } catch (e) {
+      Alert.alert('Delete failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setExpenseApiBusy(false);
+    }
+  }
+
+  function setPreview(label: string, payload: unknown) {
+    setExpenseFetchPreview(`${label}\n${JSON.stringify(payload, null, 2).slice(0, 4000)}`);
+  }
+
+  async function getExpenseOne() {
+    const id = expenseIdForGet.trim();
+    if (!id) {
+      Alert.alert('GET /expense', 'Enter expense_id.');
+      return;
+    }
+    setExpenseApiBusy(true);
+    try {
+      const data = await apiGetWithBody('/expense', { expense_id: id });
+      const items = extractDynamoItems(data);
+      setPreview('GET /expense', items[0] ?? data);
+    } catch (e) {
+      Alert.alert('Fetch failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setExpenseApiBusy(false);
+    }
+  }
+
+  async function getExpensesHouse() {
+    setExpenseApiBusy(true);
+    try {
+      const data = await apiGetWithBody('/expenses/house', {
+        house_id: API_HOUSE_ID,
+        get_urgent: expensesUrgentOnly,
+      });
+      setPreview('GET /expenses/house', extractDynamoItems(data));
+    } catch (e) {
+      Alert.alert('Fetch failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setExpenseApiBusy(false);
+    }
+  }
+
+  async function getExpensesOwer() {
+    setExpenseApiBusy(true);
+    try {
+      const data = await apiGetWithBody('/expenses/ower', {
+        house_id: API_HOUSE_ID,
+        user_id: API_USER_ID,
+      });
+      setPreview('GET /expenses/ower', extractDynamoItems(data));
+    } catch (e) {
+      Alert.alert('Fetch failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setExpenseApiBusy(false);
+    }
+  }
+
+  async function getExpensesPayer() {
+    setExpenseApiBusy(true);
+    try {
+      const data = await apiGetWithBody('/expenses/payer', {
+        house_id: API_HOUSE_ID,
+        user_id: API_USER_ID,
+      });
+      setPreview('GET /expenses/payer', extractDynamoItems(data));
+    } catch (e) {
+      Alert.alert('Fetch failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setExpenseApiBusy(false);
+    }
+  }
+
+  async function simplifyExpensesHouse() {
+    setExpenseApiBusy(true);
+    try {
+      const res = await apiPost('/expenses/simplify', {
+        house_id: API_HOUSE_ID,
+        creator: API_USER_ID,
+      });
+      setPreview('POST /expenses/simplify', res);
+      Alert.alert('Simplified', 'New consolidated expense created (see preview).');
+    } catch (e) {
+      Alert.alert('Simplify failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setExpenseApiBusy(false);
+    }
+  }
+
+  async function updateExpenseApi() {
+    const expense_id = updateExpenseId.trim();
+    const name = updateExpenseName.trim();
+    if (!expense_id || !name) {
+      Alert.alert('PUT /expenses', 'Enter expense_id and new name.');
+      return;
+    }
+    setExpenseApiBusy(true);
+    try {
+      await apiPut('/expenses', { expense_id, name });
+      Alert.alert('Updated', 'Expense saved.');
+    } catch (e) {
+      Alert.alert('Update failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setExpenseApiBusy(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -234,6 +387,157 @@ export default function ExpensesScreen({
         {groupedExpenses.map((group) => (
           <ExpenseDateGroup key={group.date} group={group} />
         ))}
+
+        <Text style={styles.sectionTitle}>Fetch / simplify / update</Text>
+        <View style={styles.apiCard}>
+          <Text style={styles.apiHint}>
+            GET handlers use a JSON body (see apiGetWithBody). Preview is truncated.
+          </Text>
+          <TextInput
+            style={styles.apiInput}
+            value={expenseIdForGet}
+            onChangeText={setExpenseIdForGet}
+            placeholder="expense_id for GET /expense"
+            placeholderTextColor={COLORS.textMuted}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity
+            style={styles.apiSecondaryBtn}
+            onPress={getExpenseOne}
+            disabled={expenseApiBusy}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.apiSecondaryBtnText}>GET /expense</Text>
+          </TouchableOpacity>
+          <View style={styles.apiRowInline}>
+            <Text style={styles.apiInlineLabel}>Urgent only (house query)</Text>
+            <Switch
+              value={expensesUrgentOnly}
+              onValueChange={setExpensesUrgentOnly}
+              trackColor={{ false: COLORS.border, true: `${COLORS.secondary}80` }}
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.apiSecondaryBtn}
+            onPress={getExpensesHouse}
+            disabled={expenseApiBusy}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.apiSecondaryBtnText}>GET /expenses/house</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.apiSecondaryBtn}
+            onPress={getExpensesOwer}
+            disabled={expenseApiBusy}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.apiSecondaryBtnText}>GET /expenses/ower</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.apiSecondaryBtn}
+            onPress={getExpensesPayer}
+            disabled={expenseApiBusy}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.apiSecondaryBtnText}>GET /expenses/payer</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.apiSimplifyBtn}
+            onPress={simplifyExpensesHouse}
+            disabled={expenseApiBusy}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.apiPrimaryBtnText}>POST /expenses/simplify</Text>
+          </TouchableOpacity>
+          <TextInput
+            style={styles.apiInput}
+            value={updateExpenseId}
+            onChangeText={setUpdateExpenseId}
+            placeholder="expense_id for PUT /expenses"
+            placeholderTextColor={COLORS.textMuted}
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={styles.apiInput}
+            value={updateExpenseName}
+            onChangeText={setUpdateExpenseName}
+            placeholder="New name"
+            placeholderTextColor={COLORS.textMuted}
+          />
+          <TouchableOpacity
+            style={styles.apiPrimaryBtn}
+            onPress={updateExpenseApi}
+            disabled={expenseApiBusy}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.apiPrimaryBtnText}>PUT /expenses</Text>
+          </TouchableOpacity>
+          <ScrollView
+            style={styles.apiPreviewScroll}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.apiPreviewText} selectable>
+              {expenseFetchPreview || '—'}
+            </Text>
+          </ScrollView>
+        </View>
+
+        <Text style={styles.sectionTitle}>Expenses API</Text>
+        <View style={styles.apiCard}>
+          <Text style={styles.apiHint}>POST /expenses and DELETE /expenses (ids from apiConfig)</Text>
+          <TextInput
+            style={styles.apiInput}
+            value={expenseName}
+            onChangeText={setExpenseName}
+            placeholder="Name"
+            placeholderTextColor={COLORS.textMuted}
+          />
+          <TextInput
+            style={styles.apiInput}
+            value={expensePrice}
+            onChangeText={setExpensePrice}
+            placeholder="Price"
+            placeholderTextColor={COLORS.textMuted}
+            keyboardType="decimal-pad"
+          />
+          <TextInput
+            style={styles.apiInput}
+            value={expenseDue}
+            onChangeText={setExpenseDue}
+            placeholder="Due date YYYY-MM-DD"
+            placeholderTextColor={COLORS.textMuted}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity
+            style={styles.apiPrimaryBtn}
+            onPress={createExpenseApi}
+            disabled={expenseApiBusy}
+            activeOpacity={0.85}
+          >
+            {expenseApiBusy ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={styles.apiPrimaryBtnText}>Create expense</Text>
+            )}
+          </TouchableOpacity>
+          <TextInput
+            style={styles.apiInput}
+            value={expenseIdToDelete}
+            onChangeText={setExpenseIdToDelete}
+            placeholder="expense_id to delete"
+            placeholderTextColor={COLORS.textMuted}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity
+            style={styles.apiDangerBtn}
+            onPress={deleteExpenseApi}
+            disabled={expenseApiBusy}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.apiPrimaryBtnText}>Delete expense</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={{ height: 120 }} />
       </ScrollView>
@@ -341,6 +645,88 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
     marginBottom: 12,
     marginTop: 4,
+  },
+
+  apiCard: {
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(103, 141, 88, 0.12)',
+    gap: 10,
+  },
+  apiHint: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginBottom: 4,
+  },
+  apiInput: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: COLORS.textDark,
+    backgroundColor: COLORS.white,
+  },
+  apiPrimaryBtn: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  apiDangerBtn: {
+    backgroundColor: '#B0524A',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  apiPrimaryBtnText: {
+    color: COLORS.white,
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  apiSecondaryBtn: {
+    backgroundColor: `${COLORS.secondary}30`,
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.secondary,
+  },
+  apiSecondaryBtnText: {
+    color: COLORS.primary,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  apiSimplifyBtn: {
+    backgroundColor: COLORS.secondary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  apiRowInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 4,
+  },
+  apiInlineLabel: { fontSize: 13, color: COLORS.textDark, fontWeight: '600' },
+  apiPreviewScroll: {
+    maxHeight: 180,
+    marginTop: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 10,
+  },
+  apiPreviewText: {
+    fontSize: 11,
+    fontFamily: 'monospace',
+    color: COLORS.textDark,
   },
 
   // Split Table Card

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { apiPost } from "@/utils/api";
+import { API_USER_ID } from './apiConfig';
 import {
   View,
   Text,
@@ -39,7 +40,7 @@ export default function AddHouseScreen({
 
   async function addHouse(name: string) {
     try {
-      const result = await apiPost("/house", { name });
+      const result = await apiPost("/house", { name, user_id: API_USER_ID });
       console.log(result);
     } catch (err) {
       console.error("Error adding house:", err);

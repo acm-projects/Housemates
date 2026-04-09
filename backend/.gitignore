@@ -5,3 +5,4 @@ samconfig.toml
 *.env
 .env*
 *package-lock.json
+env.local.json

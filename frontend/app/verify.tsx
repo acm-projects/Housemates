@@ -1,57 +1,182 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { CognitoIdentityProviderClient, ConfirmSignUpCommand } from "@aws-sdk/client-cognito-identity-provider";
+import React, { useState } from 'react'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import { CognitoIdentityProviderClient, ConfirmSignUpCommand } from '@aws-sdk/client-cognito-identity-provider'
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native'
+import { BlurView } from 'expo-blur'
+import { AppBottomNav } from '../components/app-bottom-nav'
 
-const CLIENT_ID = "22fiai4ujv7oi54lk6o6btq4vu";
-const cognito = new CognitoIdentityProviderClient({ region: "us-east-2" });
+const CLIENT_ID = '22fiai4ujv7oi54lk6o6btq4vu'
+const cognito = new CognitoIdentityProviderClient({ region: 'us-east-2' })
+
+const COLORS = {
+  bg: '#F7F3F2',
+  title: '#EC8575',
+  inactive: '#000000',
+  textDark: '#000000',
+  textMuted: '#5E5A58',
+  white: '#FFFFFF',
+  border: 'rgba(255,255,255,0.35)',
+  pink: 'rgba(255,154,139,0.7)',
+  orange: 'rgba(255,174,127,0.7)',
+  yellow: 'rgba(255,218,137,0.7)',
+}
+
+function Background() {
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+      <View style={[styles.glow, styles.pinkGlow]} />
+      <View style={[styles.glow, styles.orangeGlow]} />
+      <View style={[styles.glow, styles.yellowGlow]} />
+    </View>
+  )
+}
 
 export default function VerifyScreen() {
-  const router = useRouter();
-  const { email } = useLocalSearchParams<{ email: string }>();
-  const [code, setCode] = useState('');
+  const router = useRouter()
+  const { email } = useLocalSearchParams<{ email: string }>()
+  const [code, setCode] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleVerify = async () => {
-    const command = new ConfirmSignUpCommand({
-      ClientId: CLIENT_ID,
-      Username: email,
-      ConfirmationCode: code,
-    });
-
-    try {
-      await cognito.send(command);
-      alert("Account verified! You can now log in.");
-      router.replace('/home'); 
-    } catch (error: any) {
-      alert(error.message || "Invalid verification code");
+    if (!email || !code.trim()) {
+      setError('Enter the verification code.')
+      return
     }
-  };
+
+    setLoading(true)
+    setError('')
+    try {
+      await cognito.send(
+        new ConfirmSignUpCommand({
+          ClientId: CLIENT_ID,
+          Username: email,
+          ConfirmationCode: code.trim(),
+        }),
+      )
+      router.replace('/home')
+    } catch (e: any) {
+      setError(String(e?.message || 'Invalid verification code'))
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Verify Your Email</Text>
-      <Text style={styles.subtitle}>Enter the code sent to {email}</Text>
-      
-      <TextInput
-        style={styles.input}
-        placeholder="6-digit code"
-        value={code}
-        onChangeText={setCode}
-        keyboardType="number-pad"
-      />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" />
+      <Background />
 
-      <TouchableOpacity style={styles.button} onPress={handleVerify}>
-        <Text style={styles.buttonText}>Confirm Account</Text>
-      </TouchableOpacity>
-    </View>
-  );
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+          <Text style={styles.headerButtonText}>←</Text>
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Verify Email</Text>
+          <Text style={styles.headerSubtitle}>Confirm your account</Text>
+        </View>
+        <View style={styles.headerSpacer} />
+      </View>
+
+      <View style={styles.content}>
+        <BlurView intensity={26} tint="light" style={styles.card}>
+          <Text style={styles.title}>Verify Your Email</Text>
+          <Text style={styles.subtitle}>Enter the code sent to {email}</Text>
+
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputLabel}>Verification Code</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="6 digit code"
+              placeholderTextColor={COLORS.textMuted}
+              value={code}
+              onChangeText={setCode}
+              keyboardType="number-pad"
+              textAlign="center"
+            />
+          </View>
+
+          {!!error && <Text style={styles.errorText}>{error}</Text>}
+
+          <TouchableOpacity style={styles.primaryButton} onPress={handleVerify} disabled={loading}>
+            {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.primaryButtonText}>Confirm Account</Text>}
+          </TouchableOpacity>
+        </BlurView>
+      </View>
+
+      <AppBottomNav />
+    </SafeAreaView>
+  )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center', backgroundColor: '#FDFDFF' },
-  title: { fontSize: 24, fontWeight: '800', color: '#0A2239', marginBottom: 10 },
-  subtitle: { fontSize: 14, color: '#98AAC5', marginBottom: 30 },
-  input: { backgroundColor: '#F2F5FA', padding: 15, borderRadius: 12, fontSize: 18, marginBottom: 20, textAlign: 'center' },
-  button: { backgroundColor: '#0A2239', padding: 16, borderRadius: 12, alignItems: 'center' },
-  buttonText: { color: '#FFF', fontWeight: '700', fontSize: 16 }
-});
+  safeArea: { flex: 1, backgroundColor: COLORS.bg },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerButtonText: { fontSize: 18, color: COLORS.inactive, fontWeight: '700' },
+  headerCenter: { alignItems: 'center' },
+  headerSpacer: { width: 38, height: 38 },
+  headerTitle: { fontSize: 24, fontWeight: '800', color: COLORS.title },
+  headerSubtitle: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  content: { flex: 1, padding: 16, justifyContent: 'center', paddingBottom: 110 },
+  card: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    padding: 16,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  title: { fontSize: 22, fontWeight: '800', color: COLORS.textDark },
+  subtitle: { fontSize: 14, color: COLORS.textMuted, marginTop: 4, marginBottom: 18, lineHeight: 20 },
+  inputWrap: {
+    backgroundColor: 'rgba(255,255,255,0.24)',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.38)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  inputLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textMuted, marginBottom: 6 },
+  input: { fontSize: 18, fontWeight: '600', color: COLORS.textDark },
+  errorText: { color: '#A63A2C', fontWeight: '600', marginBottom: 12 },
+  primaryButton: {
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: COLORS.title,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+  },
+  primaryButtonText: { color: COLORS.white, fontSize: 16, fontWeight: '800' },
+  glow: { position: 'absolute', width: 220, height: 220, borderRadius: 110 },
+  pinkGlow: { left: -20, top: 290, backgroundColor: COLORS.pink },
+  orangeGlow: { right: -18, top: 110, backgroundColor: COLORS.orange },
+  yellowGlow: { right: -8, bottom: 150, backgroundColor: COLORS.yellow },
+})

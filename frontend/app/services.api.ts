@@ -6,4 +6,6 @@ export {
   apiDelete,
   apiRequest,
   extractDynamoItems,
-} from "@/utils/api"
+} from "@/utils/api";
+
+export { housematesApi } from "@/lib/housematesApi";

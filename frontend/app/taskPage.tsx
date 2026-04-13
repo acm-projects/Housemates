@@ -14,11 +14,12 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { BlurView } from 'expo-blur'
 import { API_HOUSE_ID, API_USER_ID } from './apiConfig'
 import { AppBottomNav } from '../components/app-bottom-nav'
+import { BackgroundGlows, GlassCard } from '@/components/glass-ui'
 
 type Filter = 'All' | 'Weekly' | 'In Progress' | 'Completed'
-
 type TaskItem = {
   id: string
   note: string
@@ -31,15 +32,18 @@ type TaskItem = {
 }
 
 const COLORS = {
-  bg: '#FDFDFF',
-  cardBg: '#D1DAE6',
-  primary: '#0A2239',
-  secondary: '#176087',
-  accent: '#ADB6C4',
-  textDark: '#132E32',
-  textMuted: '#98AAC5',
-  border: '#3590F3',
+  bg: '#F7F3F2',
+  title: '#EC8575',
+  active: '#EC8575',
+  inactive: '#000000',
+  textDark: '#000000',
+  textMuted: '#5E5A58',
   white: '#FFFFFF',
+  glass: 'rgba(255,255,255,0.18)',
+  border: 'rgba(255,255,255,0.35)',
+  pink: 'rgba(255,154,139,0.7)',
+  orange: 'rgba(255,174,127,0.7)',
+  yellow: 'rgba(255,218,137,0.7)',
 }
 
 const DAY = 24 * 60 * 60 * 1000
@@ -72,9 +76,9 @@ function buildSeedTasks(today: Date): TaskItem[] {
       title: 'Market Research',
       time: '10:00 AM',
       status: 'Done',
-      accent: COLORS.accent,
+      accent: COLORS.title,
       dateKey: toDateKey(today),
-      done: false,
+      done: true,
     },
     {
       id: '2',
@@ -82,17 +86,17 @@ function buildSeedTasks(today: Date): TaskItem[] {
       title: 'Competitive Analysis',
       time: '12:00 PM',
       status: 'Urgent',
-      accent: COLORS.accent,
+      accent: COLORS.title,
       dateKey: toDateKey(today),
       done: false,
     },
     {
       id: '3',
-      note: 'Uber Eats redesign challange',
-      title: 'Create Low-fidelity Wireframe',
+      note: 'Uber Eats redesign challenge',
+      title: 'Create Low Fidelity Wireframe',
       time: '07:00 PM',
       status: 'To-do',
-      accent: COLORS.accent,
+      accent: COLORS.title,
       dateKey: toDateKey(today),
       done: false,
     },
@@ -100,143 +104,18 @@ function buildSeedTasks(today: Date): TaskItem[] {
 }
 
 function statusColors(status: TaskItem['status']) {
-  if (status === 'Done') return { background: COLORS.secondary, color: COLORS.white }
-  if (status === 'Urgent') return { background: COLORS.border, color: COLORS.white }
-  return { background: COLORS.primary, color: COLORS.white }
+  if (status === 'Done') return { background: '#EC8575', color: COLORS.white }
+  if (status === 'Urgent') return { background: '#000000', color: COLORS.white }
+  return { background: 'rgba(0,0,0,0.78)', color: COLORS.white }
 }
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  content: {
-    padding: 16,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  iconButton: {
-    padding: 6,
-  },
-  title: {
-    fontSize: 22,
-    color: COLORS.textDark,
-    fontWeight: '700',
-  },
-  dateCard: {
-    backgroundColor: COLORS.cardBg,
-    padding: 12,
-    borderRadius: 14,
-    marginRight: 10,
-  },
-  dateCardActive: {
-    backgroundColor: COLORS.primary,
-  },
-  dateText: {
-    color: COLORS.textDark,
-  },
-  activeText: {
-    color: COLORS.white,
-  },
-  cardsWrap: {
-    marginTop: 16,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 90,
-    right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-  },
-  taskCard: {
-    backgroundColor: COLORS.cardBg,
-    padding: 16,
-    borderRadius: 18,
-    marginBottom: 14,
-    borderColor: COLORS.border,
-    borderWidth: 1,
-  },
-  taskNote: {
-    color: COLORS.textMuted,
-  },
-  taskTitle: {
-    fontSize: 16,
-    color: COLORS.textDark,
-    fontWeight: '600',
-    marginVertical: 6,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  timeText: {
-    color: COLORS.secondary,
-  },
-  statusPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  apiRow: {
-    marginTop: 20,
-    padding: 12,
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: 8,
-  },
-  apiLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
-  apiInput: {
-    borderWidth: 1,
-    borderColor: COLORS.accent,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: COLORS.white,
-    color: COLORS.textDark,
-  },
-  apiButton: {
-    backgroundColor: COLORS.secondary,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  apiButtonDanger: { backgroundColor: '#B0524A' },
-  apiButtonText: { color: COLORS.white, fontWeight: '700' },
-  fetchBox: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.accent,
-    maxHeight: 160,
-  },
-  fetchBoxTitle: { fontSize: 12, fontWeight: '700', color: COLORS.secondary, marginBottom: 6 },
-  fetchBoxText: { fontSize: 11, color: COLORS.textDark },
-})
 
 export default function TaskPage() {
   const router = useRouter()
   const today = useMemo(() => new Date(), [])
   const dateOptions = useMemo(() => getDateOptions(today), [today])
   const [selectedDateId, setSelectedDateId] = useState(toDateKey(today))
-  const [tasks, setTasks] = useState(() => buildSeedTasks(today))
-  const [filter, setFilter] = useState<Filter>('All')
+  const [tasks] = useState(() => buildSeedTasks(today))
+  const [filter] = useState<Filter>('All')
   const [choreIdToDelete, setChoreIdToDelete] = useState('')
   const [apiBusy, setApiBusy] = useState(false)
   const [choresHousePreview, setChoresHousePreview] = useState('(not loaded)')
@@ -252,29 +131,9 @@ export default function TaskPage() {
         apiGetWithBody('/chores/user', { user_id: API_USER_ID }),
       ])
       const houseItems = extractDynamoItems(houseRes)
-      setChoresHousePreview(
-        JSON.stringify(
-          houseItems.map((c) => ({
-            chore_id: c.chore_id,
-            name: c.name,
-            house_id: c.house_id,
-          })),
-          null,
-          2,
-        ).slice(0, 2000),
-      )
+      setChoresHousePreview(JSON.stringify(houseItems.map((c) => ({ chore_id: c.chore_id, name: c.name, house_id: c.house_id })), null, 2).slice(0, 2000))
       const userItems = extractDynamoItems(userRes)
-      setChoresUserPreview(
-        JSON.stringify(
-          userItems.map((c) => ({
-            chore_id: c.chore_id,
-            name: c.name,
-            current_user: c.current_user,
-          })),
-          null,
-          2,
-        ).slice(0, 2000),
-      )
+      setChoresUserPreview(JSON.stringify(userItems.map((c) => ({ chore_id: c.chore_id, name: c.name, current_user: c.current_user })), null, 2).slice(0, 2000))
     } catch (e) {
       Alert.alert('Load chores failed', e instanceof Error ? e.message : 'Unknown error')
     } finally {
@@ -331,10 +190,7 @@ export default function TaskPage() {
     }
     setApiBusy(true)
     try {
-      await apiDelete('/chores', {
-        house_id: API_HOUSE_ID,
-        chore_id: choreIdToDelete.trim(),
-      })
+      await apiDelete('/chores', { house_id: API_HOUSE_ID, chore_id: choreIdToDelete.trim() })
       Alert.alert('Deleted', 'Chore removed.')
       setChoreIdToDelete('')
       await loadChoresFromApi()
@@ -347,12 +203,10 @@ export default function TaskPage() {
 
   const visibleTasks = useMemo(() => {
     const selectedDate = new Date(selectedDateId)
-
     return tasks.filter((task) => {
       const taskDate = new Date(task.dateKey)
       const isSameDate = task.dateKey === selectedDateId
       const isInWeek = Math.abs(taskDate.getTime() - selectedDate.getTime()) <= 6 * DAY
-
       if (filter === 'Weekly') return isInWeek
       if (filter === 'In Progress') return isSameDate && !task.done
       if (filter === 'Completed') return isSameDate && task.done
@@ -362,29 +216,35 @@ export default function TaskPage() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <BackgroundGlows />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
-          <Pressable onPress={() => router.replace('/')} style={styles.iconButton}>
-          <Ionicons name="chevron-back" size={23} color={COLORS.primary} />
+          <Pressable onPress={() => router.replace('/')} style={styles.headerButton}>
+            <Ionicons name="chevron-back" size={22} color={COLORS.inactive} />
           </Pressable>
-          <Text style={styles.title}>Today's Tasks</Text>
-          <Ionicons name="notifications" size={22} color={COLORS.primary} />
+          <View>
+            <Text style={styles.headerTitle}>Today&apos;s Tasks</Text>
+            <Text style={styles.headerSubtitle}>Keep your house on track</Text>
+          </View>
+          <View style={styles.headerButton}>
+            <Ionicons name="notifications-outline" size={20} color={COLORS.inactive} />
+          </View>
         </View>
 
         <FlatList
           data={dateOptions}
           horizontal
+          showsHorizontalScrollIndicator={false}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => {
             const isActive = item.id === selectedDateId
             return (
-              <Pressable
-                onPress={() => setSelectedDateId(item.id)}
-                style={[styles.dateCard, isActive && styles.dateCardActive]}
-              >
-                <Text style={[styles.dateText, isActive && styles.activeText]}>{item.month}</Text>
-                <Text style={[styles.dateText, isActive && styles.activeText]}>{item.day}</Text>
-                <Text style={[styles.dateText, isActive && styles.activeText]}>{item.weekday}</Text>
+              <Pressable onPress={() => setSelectedDateId(item.id)}>
+                <BlurView intensity={26} tint="light" style={[styles.dateCard, isActive && styles.dateCardActive]}>
+                  <Text style={[styles.dateText, isActive && styles.dateTextActive]}>{item.month}</Text>
+                  <Text style={[styles.dateDay, isActive && styles.dateTextActive]}>{item.day}</Text>
+                  <Text style={[styles.dateText, isActive && styles.dateTextActive]}>{item.weekday}</Text>
+                </BlurView>
               </Pressable>
             )
           }}
@@ -394,94 +254,132 @@ export default function TaskPage() {
           {visibleTasks.map((task) => {
             const statusStyle = statusColors(task.status)
             return (
-              <View key={task.id} style={styles.taskCard}>
+              <GlassCard key={task.id} style={{ marginBottom: 14 }}>
                 <Text style={styles.taskNote}>{task.note}</Text>
                 <Text style={styles.taskTitle}>{task.title}</Text>
-
                 <View style={styles.cardFooter}>
                   <Text style={styles.timeText}>{task.time}</Text>
                   <View style={[styles.statusPill, { backgroundColor: statusStyle.background }]}>
-                    <Text style={{ color: statusStyle.color }}>{task.status}</Text>
+                    <Text style={{ color: statusStyle.color, fontWeight: '700' }}>{task.status}</Text>
                   </View>
                 </View>
-              </View>
+              </GlassCard>
             )
           })}
         </View>
 
-        <View style={styles.apiRow}>
-          <Text style={styles.apiLabel}>GET /chores/house · GET /chores/user</Text>
-          <Pressable style={styles.apiButton} onPress={loadChoresFromApi} disabled={apiBusy}>
-            {apiBusy ? (
-              <ActivityIndicator color={COLORS.white} />
-            ) : (
-              <Text style={styles.apiButtonText}>Refresh chore lists</Text>
-            )}
+        <GlassCard style={{ marginBottom: 14 }}>
+          <Text style={styles.sectionLabel}>GET /chores/house · GET /chores/user</Text>
+          <Pressable style={styles.primaryButton} onPress={loadChoresFromApi} disabled={apiBusy}>
+            {apiBusy ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.primaryButtonText}>Refresh chore lists</Text>}
           </Pressable>
-          <ScrollView style={styles.fetchBox} nestedScrollEnabled>
-            <Text style={styles.fetchBoxTitle}>House</Text>
-            <Text style={styles.fetchBoxText}>{choresHousePreview}</Text>
-            <Text style={[styles.fetchBoxTitle, { marginTop: 8 }]}>Current user</Text>
-            <Text style={styles.fetchBoxText}>{choresUserPreview}</Text>
-          </ScrollView>
-          <Text style={styles.apiLabel}>PUT /chores</Text>
-          <TextInput
-            style={styles.apiInput}
-            placeholder="chore_id"
-            placeholderTextColor={COLORS.textMuted}
-            value={updateChoreId}
-            onChangeText={setUpdateChoreId}
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.apiInput}
-            placeholder="new name"
-            placeholderTextColor={COLORS.textMuted}
-            value={updateChoreName}
-            onChangeText={setUpdateChoreName}
-          />
-          <Pressable style={styles.apiButton} onPress={updateChoreViaApi} disabled={apiBusy}>
-            <Text style={styles.apiButtonText}>Update chore</Text>
-          </Pressable>
-        </View>
+          <View style={styles.fetchBox}>
+            <ScrollView nestedScrollEnabled style={{ maxHeight: 160 }}>
+              <Text style={styles.fetchBoxTitle}>House</Text>
+              <Text style={styles.fetchBoxText}>{choresHousePreview}</Text>
+              <Text style={[styles.fetchBoxTitle, { marginTop: 8 }]}>Current user</Text>
+              <Text style={styles.fetchBoxText}>{choresUserPreview}</Text>
+            </ScrollView>
+          </View>
 
-        <View style={styles.apiRow}>
-          <Text style={styles.apiLabel}>Chores API (uses apiConfig house / user ids)</Text>
-          <Pressable
-            style={styles.apiButton}
-            onPress={createChoreViaApi}
-            disabled={apiBusy}
-          >
-            {apiBusy ? (
-              <ActivityIndicator color={COLORS.white} />
-            ) : (
-              <Text style={styles.apiButtonText}>POST /chores — create sample chore</Text>
-            )}
+          <Text style={[styles.sectionLabel, { marginTop: 12 }]}>PUT /chores</Text>
+          <TextInput style={styles.apiInput} placeholder="chore_id" placeholderTextColor={COLORS.textMuted} value={updateChoreId} onChangeText={setUpdateChoreId} autoCapitalize="none" />
+          <TextInput style={styles.apiInput} placeholder="new name" placeholderTextColor={COLORS.textMuted} value={updateChoreName} onChangeText={setUpdateChoreName} />
+          <Pressable style={styles.primaryButton} onPress={updateChoreViaApi} disabled={apiBusy}>
+            <Text style={styles.primaryButtonText}>Update chore</Text>
           </Pressable>
-          <TextInput
-            style={styles.apiInput}
-            placeholder="chore_id to delete"
-            placeholderTextColor={COLORS.textMuted}
-            value={choreIdToDelete}
-            onChangeText={setChoreIdToDelete}
-            autoCapitalize="none"
-          />
-          <Pressable
-            style={[styles.apiButton, styles.apiButtonDanger]}
-            onPress={deleteChoreViaApi}
-            disabled={apiBusy}
-          >
-            <Text style={styles.apiButtonText}>DELETE /chores</Text>
+        </GlassCard>
+
+        <GlassCard style={{ marginBottom: 14 }}>
+          <Text style={styles.sectionLabel}>Chores API</Text>
+          <Pressable style={styles.primaryButton} onPress={createChoreViaApi} disabled={apiBusy}>
+            <Text style={styles.primaryButtonText}>Create sample chore</Text>
           </Pressable>
-        </View>
+          <TextInput style={styles.apiInput} placeholder="chore_id to delete" placeholderTextColor={COLORS.textMuted} value={choreIdToDelete} onChangeText={setChoreIdToDelete} autoCapitalize="none" />
+          <Pressable style={styles.dangerButton} onPress={deleteChoreViaApi} disabled={apiBusy}>
+            <Text style={styles.primaryButtonText}>Delete chore</Text>
+          </Pressable>
+        </GlassCard>
       </ScrollView>
-      <Pressable
-        style={styles.fab}
-        onPress={() => router.push('/AddTask')}
-      >
+
+      <Pressable style={styles.fab} onPress={() => router.push('/AddTask')}>
         <Ionicons name="add" size={26} color={COLORS.white} />
       </Pressable>
       <AppBottomNav />
     </SafeAreaView>
   )
 }
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: COLORS.bg },
+  content: { padding: 16, paddingBottom: 120 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  headerButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.28)',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 24, color: COLORS.title, fontWeight: '800', textAlign: 'center' },
+  headerSubtitle: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center', marginTop: 2 },
+  dateCard: {
+    width: 82,
+    paddingVertical: 14,
+    borderRadius: 22,
+    marginRight: 10,
+    alignItems: 'center',
+    overflow: 'hidden',
+    backgroundColor: COLORS.glass,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  dateCardActive: { backgroundColor: 'rgba(236,133,117,0.24)', borderColor: 'rgba(236,133,117,0.5)' },
+  dateText: { color: COLORS.textDark, fontSize: 12 },
+  dateDay: { color: COLORS.textDark, fontSize: 20, fontWeight: '800', marginVertical: 4 },
+  dateTextActive: { color: COLORS.title },
+  cardsWrap: { marginTop: 16 },
+  taskNote: { color: COLORS.textMuted },
+  taskTitle: { fontSize: 17, color: COLORS.textDark, fontWeight: '700', marginVertical: 8 },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  timeText: { color: COLORS.textDark, fontWeight: '600' },
+  statusPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+  sectionLabel: { fontSize: 11, fontWeight: '700', color: COLORS.title, letterSpacing: 1, marginBottom: 12 },
+  apiInput: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.42)',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255,255,255,0.28)',
+    color: COLORS.textDark,
+    marginBottom: 10,
+  },
+  primaryButton: { height: 52, borderRadius: 18, backgroundColor: COLORS.title, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  dangerButton: { height: 52, borderRadius: 18, backgroundColor: '#B0524A', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  primaryButtonText: { color: COLORS.white, fontWeight: '800', fontSize: 15 },
+  fetchBox: {
+    marginTop: 2,
+    padding: 12,
+    backgroundColor: 'rgba(255,255,255,0.28)',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  fetchBoxTitle: { fontSize: 12, fontWeight: '800', color: COLORS.title, marginBottom: 6 },
+  fetchBoxText: { fontSize: 11, color: COLORS.textDark },
+  fab: {
+    position: 'absolute',
+    bottom: 94,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.title,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+})

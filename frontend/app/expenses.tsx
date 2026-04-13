@@ -24,9 +24,10 @@ import {
   BellIcon
 } from './icons';
 import { useRouter } from 'expo-router';
+import { BackgroundGlows, GLASS_COLORS } from '@/components/glass-ui';
 
 export const COLORS = {
-  bg: '#FDFDFF',
+  bg: GLASS_COLORS.bg,
   cardBg: '#F2F5FA',
   primary: '#0A2239',
   secondary: '#176087',
@@ -353,6 +354,7 @@ export default function ExpensesScreen({
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <BackgroundGlows />
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}

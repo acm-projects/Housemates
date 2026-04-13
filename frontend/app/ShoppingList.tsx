@@ -15,6 +15,7 @@ import {
   Alert,
 } from "react-native"
 import { API_HOUSE_ID } from "./apiConfig"
+import { BackgroundGlows, GLASS_COLORS } from "@/components/glass-ui"
 import {
   HomeIcon,
   ChecklistIcon,
@@ -43,7 +44,7 @@ type TabItem = { id: string; icon: React.ReactNode }
 
 // --- Colors ---
 export const COLORS = {
-  bg:           '#FDFDFF',
+  bg:           GLASS_COLORS.bg,
   cardBg:       '#F2F5FA',  
   primary:      '#0A2239',
   secondary:    '#6CA6C1',
@@ -387,6 +388,7 @@ export default function ShoppingListScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackgroundGlows />
 
       {/* Header */}
       <View style={styles.header}>

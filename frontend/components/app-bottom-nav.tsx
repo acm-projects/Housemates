@@ -1,43 +1,49 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { usePathname, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { GLASS_COLORS } from '@/components/glass-ui';
+
+type NavPath = '/taskPage' | '/ShoppingList' | '/home' | '/calendar' | '/expenses';
 
 export function AppBottomNav() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const goTo = (path: '/' | '/tasks' | '/settings') => {
+  const goTo = (path: NavPath) => {
     if (pathname === path) return;
-    router.replace(path);
+    router.push(path);
   };
 
-  const isHome = pathname === '/' || pathname === '/index';
-  const isTasks = pathname === '/tasks';
-  const isSettings = pathname === '/settings';
+  const active = (p: NavPath) => pathname === p || (p === '/home' && (pathname === '/' || pathname === '/index'));
+
+  const color = (p: NavPath) => (active(p) ? GLASS_COLORS.active : GLASS_COLORS.inactive);
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.dock}>
-        <Pressable style={styles.iconButton} onPress={() => goTo('/tasks')}>
-          <Ionicons name="checkmark-done-outline" size={28} color={isTasks ? '#11131a' : '#141722'} />
+      <BlurView intensity={40} tint="light" style={styles.dock}>
+        <View pointerEvents="none" style={styles.dockTint} />
+
+        <Pressable style={styles.iconButton} onPress={() => goTo('/taskPage')} hitSlop={8}>
+          <Ionicons name="list-outline" size={24} color={color('/taskPage')} />
         </Pressable>
 
-        <Pressable style={styles.iconButton}>
-          <Ionicons name="briefcase-outline" size={27} color="#141722" />
+        <Pressable style={styles.iconButton} onPress={() => goTo('/ShoppingList')} hitSlop={8}>
+          <Ionicons name="bag-outline" size={24} color={color('/ShoppingList')} />
         </Pressable>
 
-        <Pressable onPress={() => goTo('/')} style={[styles.homeBubble, isHome && styles.activeBubble]}>
-          <Ionicons name="home" size={18} color="#f3f4f8" />
+        <Pressable style={styles.iconButton} onPress={() => goTo('/home')} hitSlop={8}>
+          <Ionicons name="home-outline" size={26} color={color('/home')} />
         </Pressable>
 
-        <Pressable style={styles.iconButton}>
-          <Ionicons name="calendar-outline" size={25} color="#141722" />
+        <Pressable style={styles.iconButton} onPress={() => goTo('/calendar')} hitSlop={8}>
+          <Ionicons name="calendar-outline" size={24} color={color('/calendar')} />
         </Pressable>
 
-        <Pressable style={styles.iconButton} onPress={() => goTo('/settings')}>
-          <Ionicons name="bookmark-outline" size={24} color={isSettings ? '#11131a' : '#141722'} />
+        <Pressable style={styles.iconButton} onPress={() => goTo('/expenses')} hitSlop={8}>
+          <Ionicons name="ribbon-outline" size={24} color={color('/expenses')} />
         </Pressable>
-      </View>
+      </BlurView>
     </View>
   );
 }
@@ -45,40 +51,33 @@ export function AppBottomNav() {
 const styles = StyleSheet.create({
   wrap: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 12,
+    left: 16,
+    right: 16,
+    bottom: 18,
     alignItems: 'center',
   },
   dock: {
-    width: '91%',
-    height: 68,
-    backgroundColor: 'rgba(214, 214, 216, 0.9)',
-    borderRadius: 20,
-    paddingHorizontal: 28,
+    width: '100%',
+    maxWidth: 420,
+    height: 64,
+    borderRadius: 22,
+    overflow: 'hidden',
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: GLASS_COLORS.border,
+  },
+  dockTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.25)',
   },
   iconButton: {
-    width: 32,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  homeBubble: {
-    width: 32,
-    height: 32,
-    borderRadius: 11,
-    backgroundColor: '#12141b',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  activeBubble: {
-    backgroundColor: '#0f1218',
+    zIndex: 2,
   },
 });

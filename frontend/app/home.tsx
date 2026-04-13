@@ -1,5 +1,4 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { apiDelete, apiGetWithBody, apiPost, apiPut, extractDynamoItems } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -13,117 +12,112 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { extractDynamoItems, housematesApi } from '@/lib/housematesApi';
+import { BackgroundGlows, GlassCard, GLASS_COLORS } from '@/components/glass-ui';
+import { AppBottomNav } from '../components/app-bottom-nav';
 import { API_HOUSE_ID, API_USER_ID } from './apiConfig';
-import { AppBottomNav } from './AppBottomNav';
-
-const COLORS = {
-  bg:          '#FDFDFF',
-  cardBg:      '#D1DAE6',
-  primary:     '#0A2239',
-  secondary:   '#176087',
-  accent:      '#ADB6C4',
-  textDark:    '#132E32',
-  textMuted:   '#98AAC5',
-  border:      '#3590F3',
-  white:       '#FFFFFF',
-}
-
-type Task = {
-  id: string;
-  label: string;
-  done: boolean;
-};
-
-const initialTasks: Task[] = [
-  { id: 'task-1', label: 'Task 1',      done: false },
-  { id: 'task-2', label: 'Task 2',      done: false },
-  { id: 'task-3', label: 'Expense 1',   done: false },
-  { id: 'task-4', label: 'Expense 2',   done: false },
-  { id: 'task-5', label: 'Shopping 1',  done: false },
-  { id: 'task-6', label: 'Event Today', done: false },
-];
 
 type Announcement = {
   id: string;
   message: string;
   time: string;
+  dateLabel: string;
   announcement_id?: string;
 };
 
-const seedAnnouncements: Announcement[] = [
-  { id: 'a-1', message: "I'm gonna have guests over at 7PM...", time: '1:09 PM' },
-  { id: 'a-2', message: 'Does anyone have any lettuce?', time: '2:40 AM' },
-];
+function firstTwoLines(items: string[], fallback: [string, string]): [string, string] {
+  const a = items[0] ?? fallback[0];
+  const b = items[1] ?? fallback[1];
+  return [a, b];
+}
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [tasks, setTasks] = useState(initialTasks);
-  const [announcementsOpen, setAnnouncementsOpen] = useState(true);
-  const [announcementFeed, setAnnouncementFeed] = useState<Announcement[]>(seedAnnouncements);
+  const [userName, setUserName] = useState('User');
+  const [announcementFeed, setAnnouncementFeed] = useState<Announcement[]>([]);
   const [newAnnouncementText, setNewAnnouncementText] = useState('');
   const [announcementBusy, setAnnouncementBusy] = useState(false);
-  const [updateAnnouncementId, setUpdateAnnouncementId] = useState('');
-  const [updateAnnouncementText, setUpdateAnnouncementText] = useState('');
+  const [homeBusy, setHomeBusy] = useState(true);
+
+  const [todayLines, setTodayLines] = useState<[string, string]>(['Task 1', 'Task 2']);
+  const [shoppingLines, setShoppingLines] = useState<[string, string]>(['Item 1', 'Item 2']);
+  const [expenseLines, setExpenseLines] = useState<[string, string]>(['Expense 1', 'Expense 2']);
 
   const loadAnnouncements = useCallback(async () => {
-    setAnnouncementBusy(true);
     try {
-      const data = await apiGetWithBody('/announcements', { house_id: API_HOUSE_ID });
+      const data = await housematesApi.getAnnouncements(API_HOUSE_ID);
       const rows = extractDynamoItems(data);
       if (rows.length === 0) return;
       const mapped: Announcement[] = rows.map((it) => {
         const announcement_id = String(it.announcement_id ?? '');
         const text = String(it.text ?? '');
         const dateRaw = it.date;
-        const time =
-          typeof dateRaw === 'string'
-            ? new Date(dateRaw).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-              })
-            : '';
+        const d = typeof dateRaw === 'string' ? new Date(dateRaw) : new Date();
+        const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const title = text.split('\n')[0]?.slice(0, 80) || 'Announcement';
         return {
           id: announcement_id || `a-${text.slice(0, 8)}`,
           announcement_id: announcement_id || undefined,
           message: text,
-          time: time || '—',
+          time,
+          dateLabel,
         };
       });
       setAnnouncementFeed(mapped);
-    } catch (e) {
-      Alert.alert('Load announcements failed', e instanceof Error ? e.message : 'Unknown error');
-    } finally {
-      setAnnouncementBusy(false);
+    } catch {
+      // keep empty / seed
     }
   }, []);
 
-  useEffect(() => {
-    loadAnnouncements();
-  }, [loadAnnouncements]);
-
-  async function saveAnnouncementUpdate() {
-    const announcement_id = updateAnnouncementId.trim();
-    const text = updateAnnouncementText.trim();
-    if (!announcement_id || !text) {
-      Alert.alert('Update', 'Enter announcement_id and new text.');
-      return;
-    }
-    setAnnouncementBusy(true);
+  const loadHomeData = useCallback(async () => {
+    setHomeBusy(true);
     try {
-      await apiPut('/announcements', {
-        house_id: API_HOUSE_ID,
-        announcement_id,
-        text,
-        date: new Date().toISOString(),
-      });
-      Alert.alert('Updated', 'Announcement saved.');
+      const [userRes, choreRes, expRes, listsRes] = await Promise.all([
+        housematesApi.getUser(API_USER_ID).catch(() => null),
+        housematesApi.getChoresByHouse(API_HOUSE_ID).catch(() => null),
+        housematesApi.getExpensesByHouse({ house_id: API_HOUSE_ID }).catch(() => null),
+        housematesApi.getShoppingListsByHouse(API_HOUSE_ID).catch(() => null),
+      ]);
+
+      const userRows = extractDynamoItems(userRes ?? {});
+      const u = userRows[0];
+      if (u) {
+        const n = String(u.name ?? u.given_name ?? u.email ?? '').trim();
+        if (n) setUserName(n.split('@')[0] ?? n);
+      }
+
+      const chores = extractDynamoItems(choreRes ?? {}).map((c) => String(c.name ?? c.description ?? 'Chore'));
+      setTodayLines(firstTwoLines(chores, ['Task 1', 'Task 2']));
+
+      const expenses = extractDynamoItems(expRes ?? {}).map((e) => String(e.name ?? 'Expense'));
+      setExpenseLines(firstTwoLines(expenses, ['Expense 1', 'Expense 2']));
+
+      const lists = extractDynamoItems(listsRes ?? {});
+      const firstListId = lists[0] ? String(lists[0].list_id ?? '') : '';
+      if (firstListId) {
+        try {
+          const itemsRes = await housematesApi.getShoppingItems(firstListId);
+          const names = extractDynamoItems(itemsRes ?? {}).map((x) => String(x.name ?? 'Item'));
+          setShoppingLines(firstTwoLines(names, ['Item 1', 'Item 2']));
+        } catch {
+          setShoppingLines(['Item 1', 'Item 2']);
+        }
+      } else {
+        setShoppingLines(['Item 1', 'Item 2']);
+      }
+
       await loadAnnouncements();
     } catch (e) {
-      Alert.alert('Update failed', e instanceof Error ? e.message : 'Unknown error');
+      console.warn('Home load partial failure', e);
     } finally {
-      setAnnouncementBusy(false);
+      setHomeBusy(false);
     }
-  }
+  }, [loadAnnouncements]);
+
+  useEffect(() => {
+    loadHomeData();
+  }, [loadHomeData]);
 
   async function postAnnouncement() {
     const text = newAnnouncementText.trim();
@@ -133,24 +127,23 @@ export default function HomeScreen() {
     }
     setAnnouncementBusy(true);
     try {
-      const res = (await apiPost('/announcements', {
+      const res = (await housematesApi.createAnnouncement({
         house_id: API_HOUSE_ID,
         user_id: API_USER_ID,
         text,
       })) as { announcement_id?: string; message?: string };
       const now = new Date();
-      const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
       setAnnouncementFeed((prev) => [
         {
           id: res.announcement_id ?? `local-${Date.now()}`,
           announcement_id: res.announcement_id,
           message: text,
-          time,
+          time: now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+          dateLabel: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         },
         ...prev,
       ]);
       setNewAnnouncementText('');
-      Alert.alert('Posted', res.message ?? 'Announcement created');
       await loadAnnouncements();
     } catch (e) {
       Alert.alert('Post failed', e instanceof Error ? e.message : 'Unknown error');
@@ -160,16 +153,10 @@ export default function HomeScreen() {
   }
 
   async function removeAnnouncement(item: Announcement) {
-    if (!item.announcement_id) {
-      Alert.alert(
-        'Local only',
-        'This row was not created via the API, so there is no announcement_id to delete.',
-      );
-      return;
-    }
+    if (!item.announcement_id) return;
     setAnnouncementBusy(true);
     try {
-      await apiDelete('/announcements', {
+      await housematesApi.deleteAnnouncement({
         house_id: API_HOUSE_ID,
         announcement_id: item.announcement_id,
       });
@@ -182,172 +169,132 @@ export default function HomeScreen() {
     }
   }
 
-  const toggleTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((task) => (task.id === id ? { ...task, done: !task.done } : task))
-    );
-  };
-
-  const doneCount = tasks.filter((t) => t.done).length;
+  const quickAccess = [
+    {
+      key: 'today',
+      title: 'Today',
+      lines: todayLines,
+      route: '/taskPage' as const,
+    },
+    {
+      key: 'shopping',
+      title: 'Shopping',
+      lines: shoppingLines,
+      route: '/ShoppingList' as const,
+    },
+    {
+      key: 'expenses',
+      title: 'Expenses',
+      lines: expenseLines,
+      route: '/expenses' as const,
+    },
+    {
+      key: 'calendar',
+      title: 'Calendar',
+      lines: ['View schedule', 'Month & week'] as [string, string],
+      route: '/calendar' as const,
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <BackgroundGlows />
 
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <Pressable style={styles.avatarPlaceholder} onPress={() => router.push('/settings')}>
-            <Ionicons name="settings-outline" size={22} color={COLORS.primary} />
+          <Pressable style={styles.avatar} onPress={() => router.push('/settings')}>
+            <Ionicons name="person" size={22} color={GLASS_COLORS.textDark} />
           </Pressable>
-          <Text style={styles.headerTitle}>Welcome Home</Text>
-          <View style={styles.avatarSpacer} />
+          <Text style={styles.welcomeSerif} numberOfLines={1}>
+            Welcome Home, {userName}
+          </Text>
+          <Pressable style={styles.bellWrap} hitSlop={8}>
+            <Ionicons name="notifications-outline" size={24} color={GLASS_COLORS.textDark} />
+            <View style={styles.notifDot} />
+          </Pressable>
         </View>
 
-        {/* Accent bar */}
-        <View style={styles.accentBar} />
-
-        {/* Today heading + progress */}
-        <View style={styles.todayRow}>
-          <Text style={styles.todayTitle}>Today</Text>
-          <View style={styles.progressChip}>
-            <Text style={styles.progressChipText}>{doneCount}/{tasks.length} done</Text>
+        {homeBusy ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={GLASS_COLORS.title} />
           </View>
-        </View>
+        ) : null}
 
-        {/* Task card */}
-        <View style={styles.taskCard}>
-          {tasks.map((task, index) => (
-            <Pressable
-              key={task.id}
-              style={[styles.taskRow, index < tasks.length - 1 && styles.taskRowBorder]}
-              onPress={() => toggleTask(task.id)}
-            >
-              <Ionicons
-                name={task.done ? 'checkmark-circle' : 'ellipse-outline'}
-                size={22}
-                color={task.done ? COLORS.secondary : COLORS.accent}
-              />
-              <Text style={[styles.taskLabel, task.done && styles.taskLabelDone]}>
-                {task.label}
-              </Text>
+        {/* Hero placeholder */}
+        <GlassCard style={styles.heroCard}>
+          <View style={styles.heroInner} />
+        </GlassCard>
+
+        {/* Quick Access */}
+        <Text style={styles.sectionSerif}>Quick Access:</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.quickRow}
+        >
+          {quickAccess.map((qa) => (
+            <Pressable key={qa.key} onPress={() => router.push(qa.route)} style={styles.quickCardWrap}>
+              <GlassCard style={styles.quickCard}>
+                <Text style={styles.quickTitle}>{qa.title}</Text>
+                <View style={styles.quickLine}>
+                  <Ionicons name="ellipse-outline" size={18} color={GLASS_COLORS.textMuted} />
+                  <Text style={styles.quickLineText}>{qa.lines[0]}</Text>
+                </View>
+                <View style={styles.quickLine}>
+                  <Ionicons name="ellipse-outline" size={18} color={GLASS_COLORS.textMuted} />
+                  <Text style={styles.quickLineText}>{qa.lines[1]}</Text>
+                </View>
+              </GlassCard>
             </Pressable>
           ))}
-        </View>
+        </ScrollView>
 
         {/* Announcements */}
-        <View style={styles.announcementsHeader}>
-          <Pressable
-            style={styles.announcementsHeaderToggle}
-            onPress={() => setAnnouncementsOpen((prev) => !prev)}
-          >
-            <Text style={styles.announcementsTitle}>Announcements</Text>
-            <View style={styles.chevronBox}>
-              <Ionicons
-                name={announcementsOpen ? 'chevron-down-outline' : 'chevron-forward-outline'}
-                size={20}
-                color={COLORS.primary}
-              />
-            </View>
+        <Text style={[styles.sectionSerif, { marginTop: 8 }]}>Announcements:</Text>
+
+        <GlassCard style={styles.composeGlass}>
+          <TextInput
+            style={styles.composeInput}
+            placeholder="New announcement…"
+            placeholderTextColor={GLASS_COLORS.textMuted}
+            value={newAnnouncementText}
+            onChangeText={setNewAnnouncementText}
+            multiline
+          />
+          <Pressable style={styles.postBtn} onPress={postAnnouncement} disabled={announcementBusy}>
+            {announcementBusy ? (
+              <ActivityIndicator color={GLASS_COLORS.white} size="small" />
+            ) : (
+              <Text style={styles.postBtnText}>Post</Text>
+            )}
           </Pressable>
-          <Pressable style={styles.refreshAnnouncementsHit} onPress={loadAnnouncements} hitSlop={8}>
-            <Ionicons name="refresh-outline" size={22} color={COLORS.secondary} />
-          </Pressable>
-        </View>
+        </GlassCard>
 
-        {announcementsOpen && (
-          <>
-            <View style={styles.composeRow}>
-              <TextInput
-                style={styles.composeInput}
-                placeholder="New announcement…"
-                placeholderTextColor={COLORS.textMuted}
-                value={newAnnouncementText}
-                onChangeText={setNewAnnouncementText}
-                multiline
-              />
-              <Pressable
-                style={styles.composeButton}
-                onPress={postAnnouncement}
-                disabled={announcementBusy}
-              >
-                {announcementBusy ? (
-                  <ActivityIndicator color={COLORS.white} size="small" />
-                ) : (
-                  <Text style={styles.composeButtonText}>Post</Text>
-                )}
-              </Pressable>
-            </View>
-
-            <View style={styles.updateRow}>
-              <Text style={styles.updateLabel}>PUT /announcements</Text>
-              <TextInput
-                style={styles.updateInput}
-                placeholder="announcement_id"
-                placeholderTextColor={COLORS.textMuted}
-                value={updateAnnouncementId}
-                onChangeText={setUpdateAnnouncementId}
-                autoCapitalize="none"
-              />
-              <TextInput
-                style={styles.updateInput}
-                placeholder="New text"
-                placeholderTextColor={COLORS.textMuted}
-                value={updateAnnouncementText}
-                onChangeText={setUpdateAnnouncementText}
-              />
-              <Pressable
-                style={styles.updateButton}
-                onPress={saveAnnouncementUpdate}
-                disabled={announcementBusy}
-              >
-                <Text style={styles.composeButtonText}>Save update</Text>
-              </Pressable>
-            </View>
-
-            {announcementFeed.map((item, index) => (
-              <Pressable
-                key={item.id}
-                style={[styles.announcementCard, index === 0 && styles.announcementCardPrimary]}
-                onPress={() => {
-                  if (item.announcement_id) {
-                    setUpdateAnnouncementId(item.announcement_id);
-                    setUpdateAnnouncementText(item.message);
-                  }
-                }}
-                onLongPress={() => removeAnnouncement(item)}
-              >
-                <View style={styles.announcementAvatar}>
-                  <Text style={styles.avatarText}>?</Text>
+        {announcementFeed.map((item) => {
+          const title = item.message.split('\n')[0]?.slice(0, 48) || 'Update';
+          const sub = item.message.split('\n')[1]?.slice(0, 40) || item.message.slice(0, 36);
+          return (
+            <Pressable key={item.id} onLongPress={() => removeAnnouncement(item)}>
+              <GlassCard style={styles.announceCard}>
+                <View style={styles.announceThumb}>
+                  <Ionicons name="image-outline" size={22} color={GLASS_COLORS.textMuted} />
                 </View>
-                <View style={styles.announcementTextWrap}>
-                  <Text style={styles.announcementMessage} numberOfLines={2}>
-                    {item.message}
+                <View style={styles.announceBody}>
+                  <Text style={styles.announceTitle}>{title}</Text>
+                  <Text style={styles.announceSub} numberOfLines={1}>
+                    {sub}
                   </Text>
-                  <Text style={styles.announcementTime}>
-                    {item.time}
-                    {item.announcement_id ? ' · tap to edit ids · long-press delete' : ''}
+                  <Text style={styles.announceMeta}>
+                    {item.dateLabel} · {item.time}
                   </Text>
                 </View>
-              </Pressable>
-            ))}
-          </>
-        )}
+              </GlassCard>
+            </Pressable>
+          );
+        })}
 
-        {/* Progress / study card */}
-        <View style={styles.studyCard}>
-          <View style={styles.studyIconWrap}>
-            <MaterialCommunityIcons name="book-open-page-variant" size={26} color={COLORS.secondary} />
-          </View>
-          <View style={styles.studyTextWrap}>
-            <Text style={styles.studyTitle}>Daily Study</Text>
-            <Text style={styles.studySubtext}>30 Tasks</Text>
-          </View>
-          <View style={styles.progressRing}>
-            <Text style={styles.progressRingText}>87%</Text>
-          </View>
-        </View>
-
-        <View style={{ height: 100 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
 
       <AppBottomNav />
@@ -356,189 +303,109 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.bg },
-  content:  { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 18 },
-
-  // Header
+  safeArea: { flex: 1, backgroundColor: GLASS_COLORS.bg },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 },
+  loadingRow: { paddingVertical: 8, alignItems: 'center' },
   headerRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 10,
-  },
-  avatarPlaceholder: {
-    width: 42, height: 42, borderRadius: 21,
-    backgroundColor: COLORS.cardBg,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  avatarText:   { fontSize: 18, fontWeight: '700', color: COLORS.accent },
-  avatarSpacer: { width: 42, height: 42 },
-  headerTitle:  { fontSize: 22, fontWeight: '800', color: COLORS.textDark },
-
-  accentBar: {
-    height: 3, backgroundColor: COLORS.secondary,
-    borderRadius: 2, marginBottom: 16,
-  },
-
-  // Today
-  todayRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 10,
-  },
-  todayTitle: { fontSize: 36, fontWeight: '800', color: COLORS.primary },
-  progressChip: {
-    backgroundColor: `${COLORS.secondary}20`,
-    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4,
-  },
-  progressChipText: { fontSize: 13, fontWeight: '700', color: COLORS.secondary },
-
-  // Task card
-  taskCard: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 20,
-    paddingVertical: 6, paddingHorizontal: 18,
-    marginBottom: 20,
-    borderWidth: 1, borderColor: `${COLORS.border}40`,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08, shadowRadius: 10, elevation: 3,
-  },
-  taskRow: {
-    flexDirection: 'row', alignItems: 'center',
-    gap: 12, paddingVertical: 12,
-  },
-  taskRowBorder: {
-    borderBottomWidth: 1, borderBottomColor: `${COLORS.accent}40`,
-  },
-  taskLabel:     { flex: 1, fontSize: 16, color: COLORS.textDark, fontWeight: '500' },
-  taskLabelDone: { textDecorationLine: 'line-through', color: COLORS.textMuted },
-
-  // Announcements
-  announcementsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    gap: 8,
-  },
-  announcementsHeaderToggle: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  announcementsTitle: { fontSize: 20, fontWeight: '800', color: COLORS.textDark },
-  refreshAnnouncementsHit: { padding: 4, marginRight: 4 },
-  updateRow: {
-    marginBottom: 12,
-    padding: 12,
-    backgroundColor: `${COLORS.cardBg}cc`,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: `${COLORS.border}50`,
+    marginBottom: 14,
     gap: 8,
   },
-  updateLabel: { fontSize: 11, fontWeight: '700', color: COLORS.secondary },
-  updateInput: {
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.45)',
     borderWidth: 1,
-    borderColor: `${COLORS.border}60`,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: COLORS.white,
-    color: COLORS.textDark,
-    fontSize: 14,
-  },
-  updateButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  composeRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 10,
-    marginBottom: 12,
-  },
-  composeInput: {
-    flex: 1,
-    minHeight: 44,
-    maxHeight: 100,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: `${COLORS.border}60`,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: COLORS.white,
-    color: COLORS.textDark,
-    fontSize: 15,
-  },
-  composeButton: {
-    backgroundColor: COLORS.secondary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    minWidth: 72,
+    borderColor: GLASS_COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  composeButtonText: { color: COLORS.white, fontWeight: '700', fontSize: 15 },
-  chevronBox: {
-    width: 32, height: 32, borderRadius: 10,
-    backgroundColor: COLORS.cardBg,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: `${COLORS.border}40`,
+  welcomeSerif: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '700',
+    color: GLASS_COLORS.textDark,
+    textAlign: 'center',
   },
-  announcementCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    paddingVertical: 12, paddingHorizontal: 14,
-    flexDirection: 'row', alignItems: 'center',
-    marginBottom: 10,
-    borderWidth: 1, borderColor: '#E8EDF5',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
+  bellWrap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  notifDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: GLASS_COLORS.title,
+    borderWidth: 1,
+    borderColor: '#fff',
   },
-  announcementCardPrimary: {
-    borderColor: COLORS.border,
-    backgroundColor: `${COLORS.border}08`,
-  },
-  announcementAvatar: {
-    width: 44, height: 44, borderRadius: 10,
-    backgroundColor: COLORS.cardBg,
-    alignItems: 'center', justifyContent: 'center',
-    marginRight: 12,
-    borderWidth: 1, borderColor: `${COLORS.border}40`,
-  },
-  announcementTextWrap:  { flex: 1 },
-  announcementMessage:   { fontSize: 15, color: COLORS.textDark, fontWeight: '600' },
-  announcementTime:      { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
-
-  // Study card
-  studyCard: {
-    marginTop: 10,
-    backgroundColor: COLORS.cardBg,
+  heroCard: { marginBottom: 18, minHeight: 120, padding: 0 },
+  heroInner: {
+    minHeight: 112,
     borderRadius: 18,
-    paddingVertical: 14, paddingHorizontal: 16,
-    flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1, borderColor: `${COLORS.border}40`,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.07, shadowRadius: 8, elevation: 3,
+    margin: 6,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
-  studyIconWrap: {
-    width: 48, height: 48, borderRadius: 12,
-    backgroundColor: `${COLORS.secondary}20`,
-    justifyContent: 'center', alignItems: 'center',
-    marginRight: 14,
+  sectionSerif: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: GLASS_COLORS.textDark,
+    marginBottom: 10,
   },
-  studyTextWrap: { flex: 1 },
-  studyTitle:    { fontSize: 16, fontWeight: '700', color: COLORS.textDark },
-  studySubtext:  { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
-  progressRing: {
-    width: 54, height: 54, borderRadius: 27,
-    borderWidth: 4, borderColor: COLORS.secondary,
-    justifyContent: 'center', alignItems: 'center',
+  quickRow: { gap: 12, paddingBottom: 6 },
+  quickCardWrap: { marginRight: 4 },
+  quickCard: { width: 168, minHeight: 120 },
+  quickTitle: { fontSize: 17, fontWeight: '700', color: GLASS_COLORS.textDark, marginBottom: 10 },
+  quickLine: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  quickLineText: { fontSize: 14, color: GLASS_COLORS.textDark, flex: 1 },
+  composeGlass: { marginBottom: 12, gap: 10 },
+  composeInput: {
+    minHeight: 44,
+    maxHeight: 90,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    color: GLASS_COLORS.textDark,
+    fontSize: 15,
   },
-  progressRingText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+  postBtn: {
+    alignSelf: 'flex-end',
+    backgroundColor: GLASS_COLORS.title,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  postBtnText: { color: GLASS_COLORS.white, fontWeight: '700' },
+  announceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingVertical: 12,
+  },
+  announceThumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: GLASS_COLORS.border,
+  },
+  announceBody: { flex: 1 },
+  announceTitle: { fontSize: 16, fontWeight: '700', color: GLASS_COLORS.textDark },
+  announceSub: { fontSize: 13, color: GLASS_COLORS.textMuted, marginTop: 2 },
+  announceMeta: {
+    fontSize: 11,
+    color: GLASS_COLORS.textMuted,
+    marginTop: 6,
+    alignSelf: 'flex-end',
+  },
 });

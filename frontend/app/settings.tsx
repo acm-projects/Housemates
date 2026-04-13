@@ -16,9 +16,10 @@ import {
   View,
 } from 'react-native';
 import { AppBottomNav } from '../components/app-bottom-nav';
+import { BackgroundGlows, GLASS_COLORS } from '@/components/glass-ui';
 
 const COLORS = {
-  bg:          '#FDFDFF',
+  bg:          GLASS_COLORS.bg,
   cardBg:      '#D1DAE6',
   primary:     '#0A2239',
   secondary:   '#176087',
@@ -103,6 +104,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <BackgroundGlows />
       <View style={styles.page}>
 
         {/* Header */}

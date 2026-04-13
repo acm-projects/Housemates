@@ -12,7 +12,8 @@ import {
   View,
 } from 'react-native';
 import { API_HOUSE_ID } from './apiConfig';
-import { AppBottomNav } from './AppBottomNav';
+import { AppBottomNav } from '@/components/app-bottom-nav';
+import { BackgroundGlows, GLASS_COLORS } from '@/components/glass-ui';
 import { PageHeader } from '@/components/pageHeader';
 
 type TaskItem = {
@@ -154,6 +155,7 @@ export default function CalendarPage() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <BackgroundGlows />
       <View style={styles.gradient}>
         <PageHeader title="Calendar" />
 
@@ -256,10 +258,10 @@ export default function CalendarPage() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fdf2ea' },
+  safe: { flex: 1, backgroundColor: GLASS_COLORS.bg },
   gradient: {
     flex: 1,
-    backgroundColor: '#fef8e8',
+    backgroundColor: 'transparent',
   },
   loadingRow: { paddingVertical: 8, alignItems: 'center' },
   scroll: { flex: 1 },

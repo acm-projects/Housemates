@@ -1,411 +1,113 @@
 import React, { useState } from 'react'
-import { apiPost } from "@/utils/api"
+import { apiPost } from '@/utils/api'
 import { API_HOUSE_ID } from './apiConfig'
+import { useRouter } from 'expo-router'
 import {
-  View,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView
+  View,
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-
-// --- Types ---
-type Props = {
-  onBack?: () => void
-  onDone?: (data: { listName: string; price: string; date: string }) => void
-}
-
-// --- API ---
-async function saveList(data: { listName: string; price: string; date: string }) {
-  try {
-    const result = await apiPost('/shopping/list', {
-      name: data.listName,
-      house_id: API_HOUSE_ID,
-    })
-    console.log(result)
-  } catch (err) {
-    console.error('Error saving list:', err)
-  }
-}
+import { BlurView } from 'expo-blur'
+import { AppBottomNav } from '../components/app-bottom-nav'
 
 const COLORS = {
-  bg: '#FDFDFF',
-  cardBg: '#D1DAE6',
-  primary: '#0A2239',
-  secondary: '#176087',
-  accent: '#ADB6C4',
-  textDark: '#132E32',
-  textMuted: '#98AAC5',
-  border: '#3590F3',
-  borderFocus: '#ADB6C4',
-  stepInactive: '#ADB6C4',
+  bg: '#F7F3F2',
+  title: '#EC8575',
+  inactive: '#000000',
+  textDark: '#000000',
+  textMuted: '#5E5A58',
   white: '#FFFFFF',
+  border: 'rgba(255,255,255,0.35)',
+  pink: 'rgba(255,154,139,0.7)',
+  orange: 'rgba(255,174,127,0.7)',
+  yellow: 'rgba(255,218,137,0.7)',
 }
 
-
-// --- Tab Bar ---
-type TabItem = { id: string; icon: React.ReactNode }
-
-const iconColor = "#2D2D4E"
-const tabs: TabItem[] = [
-  { id: 'list',     icon: <Ionicons name="list-outline" size={24} color={iconColor} /> },
-  { id: 'wallet',   icon: <Ionicons name="bag-outline" size={24} color={iconColor} /> },
-  { id: 'home',     icon: <Ionicons name="home-outline" size={24} color={iconColor} /> },
-  { id: 'calendar', icon: <Ionicons name="calendar-outline" size={24} color={iconColor} /> },
-  { id: 'flag',     icon: <Ionicons name="flag-outline" size={24} color={iconColor} /> }
-]
-
-function BottomTabBar({
-  activeTab,
-  onTabPress
-}: {
-  activeTab: string
-  onTabPress: (id: string) => void
-}) {
+function Background() {
   return (
-    <View style={styles.tabBar}>
-      {tabs.map(tab => (
-        <TouchableOpacity
-          key={tab.id}
-          style={styles.tabItem}
-          onPress={() => onTabPress(tab.id)}
-        >
-          {activeTab === tab.id && <View style={styles.tabActiveIndicator} />}
-          {tab.icon}
-        </TouchableOpacity>
-      ))}
+    <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+      <View style={[styles.glow, styles.pinkGlow]} />
+      <View style={[styles.glow, styles.orangeGlow]} />
+      <View style={[styles.glow, styles.yellowGlow]} />
     </View>
   )
 }
 
-// --- Main Screen ---
-export default function AddListScreen({ onBack, onDone }: Props) {
-  const [activeTab,    setActiveTab]    = useState('wallet')
-  const [listName,     setListName]     = useState('')
-  const [price,        setPrice]        = useState('00.00')
-  const [date,         setDate]         = useState('02/27')
-  const [focusedField, setFocusedField] = useState<string | null>(null)
-  const [error,        setError]        = useState('')
+export default function AddListScreen() {
+  const router = useRouter()
+  const [listName, setListName] = useState('')
+  const [price, setPrice] = useState('00.00')
+  const [date, setDate] = useState('02/27')
+  const [error, setError] = useState('')
 
-  const handleDone = () => {
+  const handleDone = async () => {
     if (!listName.trim()) {
       setError('Please enter a name for your list.')
       return
     }
     setError('')
-    saveList({ listName, price, date })
-    onDone?.({ listName, price, date })
+    await apiPost('/shopping/list', { name: listName.trim(), house_id: API_HOUSE_ID })
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-
-      {/* Header */}
+    <SafeAreaView style={styles.safeArea}>
+      <Background />
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack}>
-          <View style={styles.backButtonInner}>
-            <Text style={styles.backArrow}>←</Text>
-          </View>
-        </TouchableOpacity>
-        <View style={styles.headerTextGroup}>
-          <Text style={styles.title}>Add List</Text>
-          <Text style={styles.subtitle}>Create a new shared list</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}><Text style={styles.headerButtonText}>←</Text></TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Add List</Text>
+          <Text style={styles.headerSubtitle}>Create a new shared list</Text>
         </View>
-        <View style={{ width: 38 }} />
+        <View style={styles.headerSpacer} />
       </View>
-
-      {/* Accent bar */}
-      <View style={styles.accentBar} />
-
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-
-          {/* List Name */}
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <BlurView intensity={26} tint="light" style={styles.card}>
           <Text style={styles.sectionLabel}>LIST DETAILS</Text>
-
-          <View style={[styles.inputCard, focusedField === 'name' && styles.inputCardFocused]}>
+          <View style={styles.inputWrap}>
             <Text style={styles.inputLabel}>List Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Grocery List"
-              placeholderTextColor={COLORS.textMuted}
-              value={listName}
-              onChangeText={setListName}
-              onFocus={() => setFocusedField('name')}
-              onBlur={() => setFocusedField(null)}
-              cursorColor={COLORS.primary}
-              selectionColor={`${COLORS.primary}40`}
-              autoCapitalize="words"
-              returnKeyType="next"
-            />
+            <TextInput style={styles.input} value={listName} onChangeText={setListName} placeholder="e.g. Grocery List" placeholderTextColor={COLORS.textMuted} />
           </View>
-
-          <Text style={styles.sectionLabel}>DETAILS</Text>
-
-          {/* Price row — DownloadIcon = dollar/currency circle SVG */}
-          <View style={[styles.rowCard, focusedField === 'price' && styles.rowCardFocused]}>
-            <View style={styles.rowCardLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: `${COLORS.secondary}50` }]}>
-              <Ionicons name="cash-outline" size={20} color={COLORS.primary} />
-              </View>
-              <View>
-                <Text style={styles.inputLabel}>ESTIMATED PRICE</Text>
-                <Text style={styles.rowCardSubtitle}>Total cost</Text>
-              </View>
-            </View>
-            <View style={styles.pillRow}>
-              <Text style={styles.currencyPrefix}>$</Text>
-              <TextInput
-                style={[styles.inlinePill, focusedField === 'price' && styles.inlinePillFocused]}
-                value={price}
-                onChangeText={setPrice}
-                onFocus={() => setFocusedField('price')}
-                onBlur={() => setFocusedField(null)}
-                cursorColor={COLORS.primary}
-                selectionColor={`${COLORS.primary}40`}
-                keyboardType="decimal-pad"
-                returnKeyType="next"
-                textAlign="center"
-              />
-            </View>
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputLabel}>Estimated Price</Text>
+            <TextInput style={styles.input} value={price} onChangeText={setPrice} placeholder="0.00" placeholderTextColor={COLORS.textMuted} keyboardType="decimal-pad" />
           </View>
-
-          {/* Date row — AddToCalendarIcon = calendar + cross SVG */}
-          <View style={[styles.rowCard, focusedField === 'date' && styles.rowCardFocused]}>
-            <View style={styles.rowCardLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: `${COLORS.secondary}50` }]}>
-              <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
-              </View>
-              <View>
-                <Text style={styles.inputLabel}>DUE DATE</Text>
-                <Text style={styles.rowCardSubtitle}>When should this be done?</Text>
-              </View>
-            </View>
-            <TextInput
-              style={[styles.inlinePill, focusedField === 'date' && styles.inlinePillFocused]}
-              value={date}
-              onChangeText={setDate}
-              onFocus={() => setFocusedField('date')}
-              onBlur={() => setFocusedField(null)}
-              cursorColor={COLORS.primary}
-              selectionColor={`${COLORS.primary}40`}
-              keyboardType="numbers-and-punctuation"
-              returnKeyType="done"
-              onSubmitEditing={handleDone}
-              textAlign="center"
-            />
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputLabel}>Due Date</Text>
+            <TextInput style={styles.input} value={date} onChangeText={setDate} placeholder="MM/DD" placeholderTextColor={COLORS.textMuted} />
           </View>
-
-          {/* Error */}
-          {error !== '' && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>⚠ {error}</Text>
-            </View>
-          )}
-
-          {/* Done button */}
-          <TouchableOpacity style={styles.doneButton} onPress={handleDone} activeOpacity={0.85}>
-            <Text style={styles.doneButtonText}>Create List</Text>
-            <Text style={styles.doneButtonArrow}>→</Text>
-          </TouchableOpacity>
-
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      <BottomTabBar activeTab={activeTab} onTabPress={setActiveTab} />
-
+          {!!error && <Text style={styles.errorText}>{error}</Text>}
+        </BlurView>
+        <TouchableOpacity style={styles.primaryButton} onPress={handleDone}><Text style={styles.primaryButtonText}>Create List</Text></TouchableOpacity>
+      </ScrollView>
+      <AppBottomNav />
     </SafeAreaView>
   )
 }
 
-// --- Styles ---
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-
-  header: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    justifyContent:    'space-between',
-    paddingHorizontal: 20,
-    paddingTop:        18
-  },
-  backButtonInner: {
-    width:           38,
-    height:          38,
-    borderRadius:    12,
-    backgroundColor: COLORS.cardBg,
-    alignItems:      'center',
-    justifyContent:  'center',
-    borderWidth:     1,
-    borderColor:     COLORS.border,
-    shadowColor:     '#000',
-    shadowOffset:    { width: 0, height: 1 },
-    shadowOpacity:   0.07,
-    shadowRadius:    3,
-    elevation:       2
-  },
-  backArrow:       { fontSize: 18, color: COLORS.primary, fontWeight: '600' },
-  headerTextGroup: { flex: 1, alignItems: 'center' },
-  title:           { fontSize: 22, fontWeight: '800', color: COLORS.textDark },
-  subtitle:        { fontSize: 12, color: COLORS.textMuted },
-
-  accentBar: {
-    height:          3,
-    backgroundColor: COLORS.secondary,
-    marginHorizontal: 20,
-    borderRadius:    2,
-    marginBottom:    4
-  },
-
-  keyboardView:  { flex: 1 },
-  scrollContent: { padding: 20, gap: 12 },
-
-  sectionLabel: {
-    fontSize:      11,
-    fontWeight:    '700',
-    color:         COLORS.primary,
-    letterSpacing: 1.2,
-    marginTop:     4
-  },
-
-  inputCard: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius:    16,
-    borderWidth:     1.5,
-    borderColor:     COLORS.border,
-    padding:         14,
-    shadowColor:     '#2C3A22',
-    shadowOffset:    { width: 0, height: 2 },
-    shadowOpacity:   0.07,
-    shadowRadius:    8,
-    elevation:       2
-  },
-  inputCardFocused: { borderColor: COLORS.primary, backgroundColor: '#F2FAF0' },
-
-  inputLabel: {
-    fontSize:      11,
-    fontWeight:    '600',
-    color:         COLORS.primary,
-    letterSpacing: 0.5,
-    marginBottom:  5
-  },
-  input: {
-    fontSize:        16,
-    fontWeight:      '500',
-    color:           COLORS.textDark,
-    paddingVertical: 2
-  },
-
-  rowCard: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'space-between',
-    backgroundColor: COLORS.cardBg,
-    borderRadius:    16,
-    borderWidth:     1.5,
-    borderColor:     COLORS.border,
-    padding:         14,
-    shadowColor:     '#2C3A22',
-    shadowOffset:    { width: 0, height: 2 },
-    shadowOpacity:   0.07,
-    shadowRadius:    8,
-    elevation:       2
-  },
-  rowCardFocused:  { borderColor: COLORS.primary, backgroundColor: '#F2FAF0' },
-  rowCardLeft:     { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  rowCardSubtitle: { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
-
-  iconCircle: {
-    width:          36,
-    height:         36,
-    borderRadius:   10,
-    alignItems:     'center',
-    justifyContent: 'center'
-  },
-
-  pillRow:        { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  currencyPrefix: { fontSize: 14, fontWeight: '700', color: COLORS.primary },
-
-  inlinePill: {
-    backgroundColor:  `${COLORS.primary}12`,
-    borderRadius:     10,
-    borderWidth:      1.5,
-    borderColor:      'transparent',
-    paddingHorizontal: 12,
-    paddingVertical:  7,
-    fontSize:         14,
-    fontWeight:       '700',
-    color:            COLORS.textDark,
-    minWidth:         76,
-    textAlign:        'center'
-  },
-  inlinePillFocused: {
-    borderColor:     COLORS.primary,
-    backgroundColor: `${COLORS.primary}18`
-  },
-
-  errorBanner: {
-    backgroundColor:  '#FFF0EE',
-    borderRadius:     12,
-    borderWidth:      1,
-    borderColor:      COLORS.accent,
-    paddingHorizontal: 14,
-    paddingVertical:  10
-  },
-  errorText: { color: '#B0524A', fontSize: 13, fontWeight: '500' },
-
-  doneButton: {
-    backgroundColor: COLORS.primary,
-    padding:         16,
-    borderRadius:    16,
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'center',
-    gap:             8,
-    marginTop:       6,
-    shadowColor:     COLORS.primary,
-    shadowOffset:    { width: 0, height: 6 },
-    shadowOpacity:   0.3,
-    shadowRadius:    12,
-    elevation:       6
-  },
-  doneButtonText:  { color: '#fff', fontWeight: '700', fontSize: 17 },
-  doneButtonArrow: { color: COLORS.secondary, fontSize: 18, fontWeight: '700' },
-
-  tabBar: {
-    flexDirection:       'row',
-    justifyContent:      'space-around',
-    backgroundColor:     COLORS.cardBg,
-    paddingVertical:     10,
-    borderTopLeftRadius:  20,
-    borderTopRightRadius: 20,
-    borderTopWidth:      1,
-    borderColor:         COLORS.border,
-    shadowColor:         '#000',
-    shadowOffset:        { width: 0, height: -2 },
-    shadowOpacity:       0.05,
-    shadowRadius:        8,
-    elevation:           8
-  },
-  tabItem:            { padding: 8, alignItems: 'center', position: 'relative' },
-  tabActiveIndicator: {
-    position:        'absolute',
-    top:             2,
-    width:           4,
-    height:          4,
-    borderRadius:    2,
-    backgroundColor: COLORS.accent
-  }
+  safeArea: { flex: 1, backgroundColor: COLORS.bg },
+  content: { padding: 16, paddingBottom: 110 },
+  header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.3)', borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+  headerButtonText: { fontSize: 18, color: COLORS.inactive, fontWeight: '700' },
+  headerCenter: { alignItems: 'center' },
+  headerSpacer: { width: 38, height: 38 },
+  headerTitle: { fontSize: 24, fontWeight: '800', color: COLORS.title },
+  headerSubtitle: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  card: { borderRadius: 24, overflow: 'hidden', padding: 16, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: COLORS.border },
+  sectionLabel: { fontSize: 11, fontWeight: '700', color: COLORS.title, letterSpacing: 1, marginBottom: 12 },
+  inputWrap: { backgroundColor: 'rgba(255,255,255,0.24)', borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.38)', paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12 },
+  inputLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textMuted, marginBottom: 6 },
+  input: { fontSize: 16, fontWeight: '500', color: COLORS.textDark },
+  errorText: { color: '#A63A2C', fontWeight: '600' },
+  primaryButton: { height: 56, borderRadius: 18, backgroundColor: COLORS.title, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  primaryButtonText: { color: COLORS.white, fontSize: 16, fontWeight: '800' },
+  glow: { position: 'absolute', width: 220, height: 220, borderRadius: 110 },
+  pinkGlow: { left: -20, top: 290, backgroundColor: COLORS.pink },
+  orangeGlow: { right: -18, top: 110, backgroundColor: COLORS.orange },
+  yellowGlow: { right: -8, bottom: 150, backgroundColor: COLORS.yellow },
 })

@@ -19,8 +19,8 @@ import {
   View,
 } from 'react-native'
 import { AppBottomNav } from '../components/app-bottom-nav'
-import { BackgroundGlows, GlassCard, GLASS_COLORS } from '@/components/glass-ui'
-
+import { GradientBackground } from './gradientBg';
+import { GlassCard, GLASS_COLORS } from '@/components/glass-ui';
 const REGION = 'us-east-2'
 const CLIENT_ID = '22fiai4ujv7oi54lk6o6btq4vu'
 const cognitoClient = new CognitoIdentityProviderClient({ region: REGION })
@@ -71,9 +71,9 @@ export default function SignUpScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
-      <BackgroundGlows />
+    <GradientBackground>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
@@ -152,12 +152,12 @@ export default function SignUpScreen() {
 
       <AppBottomNav />
     </SafeAreaView>
+  </GradientBackground>
   )
 }
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safeArea: { flex: 1, backgroundColor: GLASS_COLORS.bg },
+  safeArea: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: 16, paddingBottom: 110, gap: 16 },
   header: {
     paddingHorizontal: 16,

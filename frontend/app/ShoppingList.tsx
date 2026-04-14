@@ -15,7 +15,8 @@ import {
   Alert,
 } from "react-native"
 import { API_HOUSE_ID } from "./apiConfig"
-import { BackgroundGlows, GLASS_COLORS } from "@/components/glass-ui"
+import { GLASS_COLORS } from "@/components/glass-ui"
+import { GradientBackground } from './gradientBg'
 import {
   HomeIcon,
   ChecklistIcon,
@@ -387,246 +388,247 @@ export default function ShoppingListScreen() {
   }, 0)
 
   return (
-    <SafeAreaView style={styles.container}>
-      <BackgroundGlows />
+    <GradientBackground>
+      <SafeAreaView style={styles.container}>
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Shopping List</Text>
-      </View>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Shopping List</Text>
+        </View>
 
-      {/* Accent bar */}
-      <View style={styles.accentBar} />
+        {/* Accent bar */}
+        <View style={styles.accentBar} />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView contentContainerStyle={styles.scroll}>
 
-        <View style={styles.apiPanel}>
-          <Text style={styles.apiTitle}>GET /shopping/list · GET /shopping/items</Text>
-          <TouchableOpacity
-            style={styles.apiBtnSecondary}
-            onPress={mergeListsFromApi}
-            disabled={shopBusy}
-          >
-            <Text style={styles.apiBtnSecondaryText}>Refresh lists from house</Text>
-          </TouchableOpacity>
-          <Text style={styles.apiTitle}>POST /shopping/list</Text>
-          <View style={styles.apiRow}>
-            <TextInput
-              style={styles.apiInput}
-              placeholder="New list name"
-              placeholderTextColor={COLORS.textMuted}
-              value={newListName}
-              onChangeText={setNewListName}
-            />
+          <View style={styles.apiPanel}>
+            <Text style={styles.apiTitle}>GET /shopping/list · GET /shopping/items</Text>
             <TouchableOpacity
-              style={styles.apiBtn}
-              onPress={createListApi}
+              style={styles.apiBtnSecondary}
+              onPress={mergeListsFromApi}
               disabled={shopBusy}
             >
-              {shopBusy ? (
-                <ActivityIndicator color={COLORS.white} />
-              ) : (
-                <Text style={styles.apiBtnText}>Create</Text>
-              )}
+              <Text style={styles.apiBtnSecondaryText}>Refresh lists from house</Text>
             </TouchableOpacity>
-          </View>
-          <Text style={styles.apiSub}>PUT /shopping/list</Text>
-          <TextInput
-            style={styles.apiInputFull}
-            placeholder="list_id"
-            placeholderTextColor={COLORS.textMuted}
-            value={updateListId}
-            onChangeText={setUpdateListId}
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.apiInputFull}
-            placeholder="New list title"
-            placeholderTextColor={COLORS.textMuted}
-            value={updateListName}
-            onChangeText={setUpdateListName}
-          />
-          <TouchableOpacity style={styles.apiBtnSecondary} onPress={updateListViaApi} disabled={shopBusy}>
-            <Text style={styles.apiBtnSecondaryText}>Update list name</Text>
-          </TouchableOpacity>
-          <Text style={styles.apiSub}>PUT /shopping/item</Text>
-          <TextInput
-            style={styles.apiInputFull}
-            placeholder="shoppingitem_id"
-            placeholderTextColor={COLORS.textMuted}
-            value={updateItemId}
-            onChangeText={setUpdateItemId}
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.apiInputFull}
-            placeholder="New item name"
-            placeholderTextColor={COLORS.textMuted}
-            value={updateItemName}
-            onChangeText={setUpdateItemName}
-          />
-          <TextInput
-            style={styles.apiInputFull}
-            placeholder="Price (optional)"
-            placeholderTextColor={COLORS.textMuted}
-            value={updateItemPrice}
-            onChangeText={setUpdateItemPrice}
-            keyboardType="decimal-pad"
-          />
-          <TouchableOpacity style={styles.apiBtnSecondary} onPress={updateItemViaApi} disabled={shopBusy}>
-            <Text style={styles.apiBtnSecondaryText}>Update item</Text>
-          </TouchableOpacity>
-          <Text style={styles.apiSub}>
-            Lists with a server id: load items, add items (POST), delete list or item. Tap a list row below to fill list_id for PUT.
-          </Text>
-        </View>
-
-        {data.map(group => {
-          const checkedCount = group.items.filter(i => i.checked).length
-          const progressPct  = group.items.length > 0
-            ? checkedCount / group.items.length
-            : 0
-
-          return (
-            <View key={group.id} style={styles.groupCard}>
-
-              {/* Group header */}
-              <View style={styles.groupHeader}>
-                <TouchableOpacity
-                  style={styles.groupTitleHit}
-                  onPress={() => {
-                    if (group.list_id) setUpdateListId(group.list_id)
-                  }}
-                  disabled={!group.list_id}
-                >
-                  <Text style={styles.groupTitle}>{group.title}</Text>
-                  {group.list_id ? (
-                    <Text style={styles.groupTitleHint}>tap title → PUT list id</Text>
-                  ) : null}
-                </TouchableOpacity>
-                <View style={styles.groupHeaderRight}>
-                  <Text style={styles.groupProgress}>
-                    {checkedCount}/{group.items.length}
-                  </Text>
-                  {group.list_id ? (
-                    <>
-                      <TouchableOpacity onPress={() => loadItemsForGroup(group)} hitSlop={8}>
-                        <Ionicons name="cloud-download-outline" size={20} color={COLORS.primary} />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => deleteListApi(group)} hitSlop={8}>
-                        <Ionicons name="trash-outline" size={20} color="#B0524A" />
-                      </TouchableOpacity>
-                    </>
-                  ) : null}
-                </View>
-              </View>
-
-              {/* Progress bar — outer track + inner fill View */}
-              <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${progressPct * 100}%` }
-                  ]}
-                />
-              </View>
-
-              {/* Items */}
-              {group.items.map(item => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.itemRow}
-                  onPress={() => toggleItem(group.id, item.id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.checkbox, item.checked && styles.checkboxActive]}>
-                    {item.checked && <Text style={styles.checkMark}>✓</Text>}
-                  </View>
-                  <View style={styles.itemInfo}>
-                    <Text style={[styles.itemName, item.checked && styles.itemChecked]}>
-                      {item.name}
-                    </Text>
-                  </View>
-                  <View style={[styles.priceChip, item.checked && styles.priceChipChecked]}>
-                    <Text style={[styles.itemPrice, item.checked && styles.itemPriceChecked]}>
-                      {item.price}
-                    </Text>
-                  </View>
-                  {item.shoppingitem_id ? (
-                    <TouchableOpacity
-                      onPress={() => deleteItemApi(group.id, item)}
-                      onLongPress={() => {
-                        setUpdateItemId(item.shoppingitem_id ?? "")
-                        setUpdateItemName(item.name)
-                        setUpdateItemPrice(
-                          String(parseFloat(item.price.replace("$", "")) || ""),
-                        )
-                      }}
-                      hitSlop={8}
-                      style={styles.itemDeleteHit}
-                    >
-                      <Text style={styles.itemDeleteText}>×</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </TouchableOpacity>
-              ))}
-
-              {group.list_id ? (
-                <View style={styles.addItemBox}>
-                  <Text style={styles.addItemLabel}>POST /shopping/item</Text>
-                  <TextInput
-                    style={styles.addItemInput}
-                    placeholder="Item name"
-                    placeholderTextColor={COLORS.textMuted}
-                    value={draftFor(group.id).name}
-                    onChangeText={(t) => setDraft(group.id, { name: t })}
-                  />
-                  <TextInput
-                    style={styles.addItemInput}
-                    placeholder="Description"
-                    placeholderTextColor={COLORS.textMuted}
-                    value={draftFor(group.id).description}
-                    onChangeText={(t) => setDraft(group.id, { description: t })}
-                  />
-                  <TextInput
-                    style={styles.addItemInput}
-                    placeholder="Price"
-                    placeholderTextColor={COLORS.textMuted}
-                    value={draftFor(group.id).price}
-                    onChangeText={(t) => setDraft(group.id, { price: t })}
-                    keyboardType="decimal-pad"
-                  />
-                  <TouchableOpacity
-                    style={styles.addItemBtn}
-                    onPress={() => addItemApi(group)}
-                    disabled={shopBusy}
-                  >
-                    <Text style={styles.addItemBtnText}>Add item</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : null}
-
+            <Text style={styles.apiTitle}>POST /shopping/list</Text>
+            <View style={styles.apiRow}>
+              <TextInput
+                style={styles.apiInput}
+                placeholder="New list name"
+                placeholderTextColor={COLORS.textMuted}
+                value={newListName}
+                onChangeText={setNewListName}
+              />
+              <TouchableOpacity
+                style={styles.apiBtn}
+                onPress={createListApi}
+                disabled={shopBusy}
+              >
+                {shopBusy ? (
+                  <ActivityIndicator color={COLORS.white} />
+                ) : (
+                  <Text style={styles.apiBtnText}>Create</Text>
+                )}
+              </TouchableOpacity>
             </View>
-          )
-        })}
+            <Text style={styles.apiSub}>PUT /shopping/list</Text>
+            <TextInput
+              style={styles.apiInputFull}
+              placeholder="list_id"
+              placeholderTextColor={COLORS.textMuted}
+              value={updateListId}
+              onChangeText={setUpdateListId}
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.apiInputFull}
+              placeholder="New list title"
+              placeholderTextColor={COLORS.textMuted}
+              value={updateListName}
+              onChangeText={setUpdateListName}
+            />
+            <TouchableOpacity style={styles.apiBtnSecondary} onPress={updateListViaApi} disabled={shopBusy}>
+              <Text style={styles.apiBtnSecondaryText}>Update list name</Text>
+            </TouchableOpacity>
+            <Text style={styles.apiSub}>PUT /shopping/item</Text>
+            <TextInput
+              style={styles.apiInputFull}
+              placeholder="shoppingitem_id"
+              placeholderTextColor={COLORS.textMuted}
+              value={updateItemId}
+              onChangeText={setUpdateItemId}
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.apiInputFull}
+              placeholder="New item name"
+              placeholderTextColor={COLORS.textMuted}
+              value={updateItemName}
+              onChangeText={setUpdateItemName}
+            />
+            <TextInput
+              style={styles.apiInputFull}
+              placeholder="Price (optional)"
+              placeholderTextColor={COLORS.textMuted}
+              value={updateItemPrice}
+              onChangeText={setUpdateItemPrice}
+              keyboardType="decimal-pad"
+            />
+            <TouchableOpacity style={styles.apiBtnSecondary} onPress={updateItemViaApi} disabled={shopBusy}>
+              <Text style={styles.apiBtnSecondaryText}>Update item</Text>
+            </TouchableOpacity>
+            <Text style={styles.apiSub}>
+              Lists with a server id: load items, add items (POST), delete list or item. Tap a list row below to fill list_id for PUT.
+            </Text>
+          </View>
 
-        {/* Total */}
-        <View style={styles.totalCard}>
-          <Text style={styles.totalLabel}>Total checked</Text>
-          <Text style={styles.totalPrice}>${total.toFixed(2)}</Text>
-        </View>
+          {data.map(group => {
+            const checkedCount = group.items.filter(i => i.checked).length
+            const progressPct  = group.items.length > 0
+              ? checkedCount / group.items.length
+              : 0
 
-      </ScrollView>
-      <Pressable
-        style={styles.fab}
-        onPress={() => router.push('/AddList')}
-      >
-        <Ionicons name="add" size={26} color={COLORS.white} />
-      </Pressable>
+            return (
+              <View key={group.id} style={styles.groupCard}>
 
-      <BottomTabBar activeTab={activeTab} onTabPress={setActiveTab} />
+                {/* Group header */}
+                <View style={styles.groupHeader}>
+                  <TouchableOpacity
+                    style={styles.groupTitleHit}
+                    onPress={() => {
+                      if (group.list_id) setUpdateListId(group.list_id)
+                    }}
+                    disabled={!group.list_id}
+                  >
+                    <Text style={styles.groupTitle}>{group.title}</Text>
+                    {group.list_id ? (
+                      <Text style={styles.groupTitleHint}>tap title → PUT list id</Text>
+                    ) : null}
+                  </TouchableOpacity>
+                  <View style={styles.groupHeaderRight}>
+                    <Text style={styles.groupProgress}>
+                      {checkedCount}/{group.items.length}
+                    </Text>
+                    {group.list_id ? (
+                      <>
+                        <TouchableOpacity onPress={() => loadItemsForGroup(group)} hitSlop={8}>
+                          <Ionicons name="cloud-download-outline" size={20} color={COLORS.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => deleteListApi(group)} hitSlop={8}>
+                          <Ionicons name="trash-outline" size={20} color="#B0524A" />
+                        </TouchableOpacity>
+                      </>
+                    ) : null}
+                  </View>
+                </View>
 
-    </SafeAreaView>
+                {/* Progress bar — outer track + inner fill View */}
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      { width: `${progressPct * 100}%` }
+                    ]}
+                  />
+                </View>
+
+                {/* Items */}
+                {group.items.map(item => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.itemRow}
+                    onPress={() => toggleItem(group.id, item.id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.checkbox, item.checked && styles.checkboxActive]}>
+                      {item.checked && <Text style={styles.checkMark}>✓</Text>}
+                    </View>
+                    <View style={styles.itemInfo}>
+                      <Text style={[styles.itemName, item.checked && styles.itemChecked]}>
+                        {item.name}
+                      </Text>
+                    </View>
+                    <View style={[styles.priceChip, item.checked && styles.priceChipChecked]}>
+                      <Text style={[styles.itemPrice, item.checked && styles.itemPriceChecked]}>
+                        {item.price}
+                      </Text>
+                    </View>
+                    {item.shoppingitem_id ? (
+                      <TouchableOpacity
+                        onPress={() => deleteItemApi(group.id, item)}
+                        onLongPress={() => {
+                          setUpdateItemId(item.shoppingitem_id ?? "")
+                          setUpdateItemName(item.name)
+                          setUpdateItemPrice(
+                            String(parseFloat(item.price.replace("$", "")) || ""),
+                          )
+                        }}
+                        hitSlop={8}
+                        style={styles.itemDeleteHit}
+                      >
+                        <Text style={styles.itemDeleteText}>×</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </TouchableOpacity>
+                ))}
+
+                {group.list_id ? (
+                  <View style={styles.addItemBox}>
+                    <Text style={styles.addItemLabel}>POST /shopping/item</Text>
+                    <TextInput
+                      style={styles.addItemInput}
+                      placeholder="Item name"
+                      placeholderTextColor={COLORS.textMuted}
+                      value={draftFor(group.id).name}
+                      onChangeText={(t) => setDraft(group.id, { name: t })}
+                    />
+                    <TextInput
+                      style={styles.addItemInput}
+                      placeholder="Description"
+                      placeholderTextColor={COLORS.textMuted}
+                      value={draftFor(group.id).description}
+                      onChangeText={(t) => setDraft(group.id, { description: t })}
+                    />
+                    <TextInput
+                      style={styles.addItemInput}
+                      placeholder="Price"
+                      placeholderTextColor={COLORS.textMuted}
+                      value={draftFor(group.id).price}
+                      onChangeText={(t) => setDraft(group.id, { price: t })}
+                      keyboardType="decimal-pad"
+                    />
+                    <TouchableOpacity
+                      style={styles.addItemBtn}
+                      onPress={() => addItemApi(group)}
+                      disabled={shopBusy}
+                    >
+                      <Text style={styles.addItemBtnText}>Add item</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
+
+              </View>
+            )
+          })}
+
+          {/* Total */}
+          <View style={styles.totalCard}>
+            <Text style={styles.totalLabel}>Total checked</Text>
+            <Text style={styles.totalPrice}>${total.toFixed(2)}</Text>
+          </View>
+
+        </ScrollView>
+        <Pressable
+          style={styles.fab}
+          onPress={() => router.push('/AddList')}
+        >
+          <Ionicons name="add" size={26} color={COLORS.white} />
+        </Pressable>
+
+        <BottomTabBar activeTab={activeTab} onTabPress={setActiveTab} />
+
+      </SafeAreaView>
+    </GradientBackground>
   )
 }
 
@@ -634,7 +636,7 @@ export default function ShoppingListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex:            1,
-    backgroundColor: COLORS.bg
+    backgroundColor: 'transparent',
   },
   fab: {
     position: 'absolute',

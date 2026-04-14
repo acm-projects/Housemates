@@ -17,7 +17,8 @@ import {
 import { BlurView } from 'expo-blur'
 import { API_HOUSE_ID, API_USER_ID } from './apiConfig'
 import { AppBottomNav } from '../components/app-bottom-nav'
-import { BackgroundGlows, GlassCard } from '@/components/glass-ui'
+import { GlassCard } from '@/components/glass-ui'
+import { GradientBackground } from './gradientBg'
 
 type Filter = 'All' | 'Weekly' | 'In Progress' | 'Completed'
 type TaskItem = {
@@ -41,9 +42,6 @@ const COLORS = {
   white: '#FFFFFF',
   glass: 'rgba(255,255,255,0.18)',
   border: 'rgba(255,255,255,0.35)',
-  pink: 'rgba(255,154,139,0.7)',
-  orange: 'rgba(255,174,127,0.7)',
-  yellow: 'rgba(255,218,137,0.7)',
 }
 
 const DAY = 24 * 60 * 60 * 1000
@@ -215,103 +213,104 @@ export default function TaskPage() {
   }, [filter, selectedDateId, tasks])
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <BackgroundGlows />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerRow}>
-          <Pressable onPress={() => router.replace('/')} style={styles.headerButton}>
-            <Ionicons name="chevron-back" size={22} color={COLORS.inactive} />
-          </Pressable>
-          <View>
-            <Text style={styles.headerTitle}>Today&apos;s Tasks</Text>
-            <Text style={styles.headerSubtitle}>Keep your house on track</Text>
+    <GradientBackground>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.headerRow}>
+            <Pressable onPress={() => router.replace('/')} style={styles.headerButton}>
+              <Ionicons name="chevron-back" size={22} color={COLORS.inactive} />
+            </Pressable>
+            <View>
+              <Text style={styles.headerTitle}>Today&apos;s Tasks</Text>
+              <Text style={styles.headerSubtitle}>Keep your house on track</Text>
+            </View>
+            <View style={styles.headerButton}>
+              <Ionicons name="notifications-outline" size={20} color={COLORS.inactive} />
+            </View>
           </View>
-          <View style={styles.headerButton}>
-            <Ionicons name="notifications-outline" size={20} color={COLORS.inactive} />
-          </View>
-        </View>
 
-        <FlatList
-          data={dateOptions}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => {
-            const isActive = item.id === selectedDateId
-            return (
-              <Pressable onPress={() => setSelectedDateId(item.id)}>
-                <BlurView intensity={26} tint="light" style={[styles.dateCard, isActive && styles.dateCardActive]}>
-                  <Text style={[styles.dateText, isActive && styles.dateTextActive]}>{item.month}</Text>
-                  <Text style={[styles.dateDay, isActive && styles.dateTextActive]}>{item.day}</Text>
-                  <Text style={[styles.dateText, isActive && styles.dateTextActive]}>{item.weekday}</Text>
-                </BlurView>
-              </Pressable>
-            )
-          }}
-        />
+          <FlatList
+            data={dateOptions}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const isActive = item.id === selectedDateId
+              return (
+                <Pressable onPress={() => setSelectedDateId(item.id)}>
+                  <BlurView intensity={26} tint="light" style={[styles.dateCard, isActive && styles.dateCardActive]}>
+                    <Text style={[styles.dateText, isActive && styles.dateTextActive]}>{item.month}</Text>
+                    <Text style={[styles.dateDay, isActive && styles.dateTextActive]}>{item.day}</Text>
+                    <Text style={[styles.dateText, isActive && styles.dateTextActive]}>{item.weekday}</Text>
+                  </BlurView>
+                </Pressable>
+              )
+            }}
+          />
 
-        <View style={styles.cardsWrap}>
-          {visibleTasks.map((task) => {
-            const statusStyle = statusColors(task.status)
-            return (
-              <GlassCard key={task.id} style={{ marginBottom: 14 }}>
-                <Text style={styles.taskNote}>{task.note}</Text>
-                <Text style={styles.taskTitle}>{task.title}</Text>
-                <View style={styles.cardFooter}>
-                  <Text style={styles.timeText}>{task.time}</Text>
-                  <View style={[styles.statusPill, { backgroundColor: statusStyle.background }]}>
-                    <Text style={{ color: statusStyle.color, fontWeight: '700' }}>{task.status}</Text>
+          <View style={styles.cardsWrap}>
+            {visibleTasks.map((task) => {
+              const statusStyle = statusColors(task.status)
+              return (
+                <GlassCard key={task.id} style={{ marginBottom: 14 }}>
+                  <Text style={styles.taskNote}>{task.note}</Text>
+                  <Text style={styles.taskTitle}>{task.title}</Text>
+                  <View style={styles.cardFooter}>
+                    <Text style={styles.timeText}>{task.time}</Text>
+                    <View style={[styles.statusPill, { backgroundColor: statusStyle.background }]}>
+                      <Text style={{ color: statusStyle.color, fontWeight: '700' }}>{task.status}</Text>
+                    </View>
                   </View>
-                </View>
-              </GlassCard>
-            )
-          })}
-        </View>
-
-        <GlassCard style={{ marginBottom: 14 }}>
-          <Text style={styles.sectionLabel}>GET /chores/house · GET /chores/user</Text>
-          <Pressable style={styles.primaryButton} onPress={loadChoresFromApi} disabled={apiBusy}>
-            {apiBusy ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.primaryButtonText}>Refresh chore lists</Text>}
-          </Pressable>
-          <View style={styles.fetchBox}>
-            <ScrollView nestedScrollEnabled style={{ maxHeight: 160 }}>
-              <Text style={styles.fetchBoxTitle}>House</Text>
-              <Text style={styles.fetchBoxText}>{choresHousePreview}</Text>
-              <Text style={[styles.fetchBoxTitle, { marginTop: 8 }]}>Current user</Text>
-              <Text style={styles.fetchBoxText}>{choresUserPreview}</Text>
-            </ScrollView>
+                </GlassCard>
+              )
+            })}
           </View>
 
-          <Text style={[styles.sectionLabel, { marginTop: 12 }]}>PUT /chores</Text>
-          <TextInput style={styles.apiInput} placeholder="chore_id" placeholderTextColor={COLORS.textMuted} value={updateChoreId} onChangeText={setUpdateChoreId} autoCapitalize="none" />
-          <TextInput style={styles.apiInput} placeholder="new name" placeholderTextColor={COLORS.textMuted} value={updateChoreName} onChangeText={setUpdateChoreName} />
-          <Pressable style={styles.primaryButton} onPress={updateChoreViaApi} disabled={apiBusy}>
-            <Text style={styles.primaryButtonText}>Update chore</Text>
-          </Pressable>
-        </GlassCard>
+          <GlassCard style={{ marginBottom: 14 }}>
+            <Text style={styles.sectionLabel}>GET /chores/house · GET /chores/user</Text>
+            <Pressable style={styles.primaryButton} onPress={loadChoresFromApi} disabled={apiBusy}>
+              {apiBusy ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.primaryButtonText}>Refresh chore lists</Text>}
+            </Pressable>
+            <View style={styles.fetchBox}>
+              <ScrollView nestedScrollEnabled style={{ maxHeight: 160 }}>
+                <Text style={styles.fetchBoxTitle}>House</Text>
+                <Text style={styles.fetchBoxText}>{choresHousePreview}</Text>
+                <Text style={[styles.fetchBoxTitle, { marginTop: 8 }]}>Current user</Text>
+                <Text style={styles.fetchBoxText}>{choresUserPreview}</Text>
+              </ScrollView>
+            </View>
 
-        <GlassCard style={{ marginBottom: 14 }}>
-          <Text style={styles.sectionLabel}>Chores API</Text>
-          <Pressable style={styles.primaryButton} onPress={createChoreViaApi} disabled={apiBusy}>
-            <Text style={styles.primaryButtonText}>Create sample chore</Text>
-          </Pressable>
-          <TextInput style={styles.apiInput} placeholder="chore_id to delete" placeholderTextColor={COLORS.textMuted} value={choreIdToDelete} onChangeText={setChoreIdToDelete} autoCapitalize="none" />
-          <Pressable style={styles.dangerButton} onPress={deleteChoreViaApi} disabled={apiBusy}>
-            <Text style={styles.primaryButtonText}>Delete chore</Text>
-          </Pressable>
-        </GlassCard>
-      </ScrollView>
+            <Text style={[styles.sectionLabel, { marginTop: 12 }]}>PUT /chores</Text>
+            <TextInput style={styles.apiInput} placeholder="chore_id" placeholderTextColor={COLORS.textMuted} value={updateChoreId} onChangeText={setUpdateChoreId} autoCapitalize="none" />
+            <TextInput style={styles.apiInput} placeholder="new name" placeholderTextColor={COLORS.textMuted} value={updateChoreName} onChangeText={setUpdateChoreName} />
+            <Pressable style={styles.primaryButton} onPress={updateChoreViaApi} disabled={apiBusy}>
+              <Text style={styles.primaryButtonText}>Update chore</Text>
+            </Pressable>
+          </GlassCard>
 
-      <Pressable style={styles.fab} onPress={() => router.push('/AddTask')}>
-        <Ionicons name="add" size={26} color={COLORS.white} />
-      </Pressable>
-      <AppBottomNav />
-    </SafeAreaView>
+          <GlassCard style={{ marginBottom: 14 }}>
+            <Text style={styles.sectionLabel}>Chores API</Text>
+            <Pressable style={styles.primaryButton} onPress={createChoreViaApi} disabled={apiBusy}>
+              <Text style={styles.primaryButtonText}>Create sample chore</Text>
+            </Pressable>
+            <TextInput style={styles.apiInput} placeholder="chore_id to delete" placeholderTextColor={COLORS.textMuted} value={choreIdToDelete} onChangeText={setChoreIdToDelete} autoCapitalize="none" />
+            <Pressable style={styles.dangerButton} onPress={deleteChoreViaApi} disabled={apiBusy}>
+              <Text style={styles.primaryButtonText}>Delete chore</Text>
+            </Pressable>
+          </GlassCard>
+        </ScrollView>
+
+        <Pressable style={styles.fab} onPress={() => router.push('/AddTask')}>
+          <Ionicons name="add" size={26} color={COLORS.white} />
+        </Pressable>
+        <AppBottomNav />
+      </SafeAreaView>
+    </GradientBackground>
   )
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.bg },
+  safeArea: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: 16, paddingBottom: 120 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   headerButton: {

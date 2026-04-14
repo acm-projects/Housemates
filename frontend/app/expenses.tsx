@@ -14,32 +14,32 @@ import {
   ActivityIndicator,
   Alert,
   Switch,
-} from 'react-native';
+} from "react-native";
 import {
   HomeIcon,
   ChecklistIcon,
   ShoppingBagIcon,
   CalendarIcon,
   ExpensesIcon,
-  BellIcon
-} from './icons';
-import { useRouter } from 'expo-router';
-import { BackgroundGlows, GLASS_COLORS } from '@/components/glass-ui';
+  BellIcon,
+} from "./icons";
+import { useRouter } from "expo-router";
+import { GLASS_COLORS } from "@/components/glass-ui";
+import { GradientBackground } from "./gradientBg";
 
 export const COLORS = {
   bg: GLASS_COLORS.bg,
-  cardBg: '#F2F5FA',
-  primary: '#0A2239',
-  secondary: '#176087',
-  accent: '#ADB6C4',
-  textDark: '#132E32',
-  textMuted: '#98AAC5',
-  border: '#3590F3',
-  borderFocus: '#ADB6C4',
-  white: '#FFFFFF',
-}
+  cardBg: "#F2F5FA",
+  primary: "#0A2239",
+  secondary: "#176087",
+  accent: "#ADB6C4",
+  textDark: "#132E32",
+  textMuted: "#98AAC5",
+  border: "#3590F3",
+  borderFocus: "#ADB6C4",
+  white: "#FFFFFF",
+};
 
-// --- Types ---
 type SplitMember = {
   id: string;
   name: string;
@@ -59,34 +59,32 @@ type GroupedExpenses = {
   expenses: Expense[];
 };
 
-// --- Sample Data ---
 const splitMembers: SplitMember[] = [
-  { id: '1', name: 'You', avatar: 'https://i.pravatar.cc/80?img=1', amount: -99.0 },
-  { id: '2', name: 'Blake', avatar: 'https://i.pravatar.cc/80?img=2', amount: 23.0 },
-  { id: '3', name: 'Sam', avatar: 'https://i.pravatar.cc/80?img=3', amount: -99.0 },
-  { id: '4', name: 'Alex', avatar: 'https://i.pravatar.cc/80?img=4', amount: -99.0 },
+  { id: "1", name: "You", avatar: "https://i.pravatar.cc/80?img=1", amount: -99.0 },
+  { id: "2", name: "Blake", avatar: "https://i.pravatar.cc/80?img=2", amount: 23.0 },
+  { id: "3", name: "Sam", avatar: "https://i.pravatar.cc/80?img=3", amount: -99.0 },
+  { id: "4", name: "Alex", avatar: "https://i.pravatar.cc/80?img=4", amount: -99.0 },
 ];
 
 const groupedExpenses: GroupedExpenses[] = [
   {
-    date: 'February 16, 2026',
+    date: "February 16, 2026",
     expenses: [
-      { id: '1', icon: 'https://i.pravatar.cc/40?img=10', amount: 31.0, description: 'Grocery Run' },
-      { id: '2', icon: 'https://i.pravatar.cc/40?img=11', amount: 18.5, description: 'Streaming Service' },
+      { id: "1", icon: "https://i.pravatar.cc/40?img=10", amount: 31.0, description: "Grocery Run" },
+      { id: "2", icon: "https://i.pravatar.cc/40?img=11", amount: 18.5, description: "Streaming Service" },
     ],
   },
   {
-    date: 'February 14, 2026',
+    date: "February 14, 2026",
     expenses: [
-      { id: '3', icon: 'https://i.pravatar.cc/40?img=12', amount: 62.0, description: 'Electricity Bill' },
-      { id: '4', icon: 'https://i.pravatar.cc/40?img=13', amount: 14.0, description: 'Cleaning Supplies' },
+      { id: "3", icon: "https://i.pravatar.cc/40?img=12", amount: 62.0, description: "Electricity Bill" },
+      { id: "4", icon: "https://i.pravatar.cc/40?img=13", amount: 14.0, description: "Cleaning Supplies" },
     ],
   },
 ];
 
-// --- Components ---
 function SplitTableCard({ members }: { members: SplitMember[] }) {
-  const totalOwed = members.filter(m => m.amount > 0).reduce((a, m) => a + m.amount, 0);
+  const totalOwed = members.filter((m) => m.amount > 0).reduce((a, m) => a + m.amount, 0);
 
   return (
     <View style={styles.splitCard}>
@@ -108,7 +106,7 @@ function SplitTableCard({ members }: { members: SplitMember[] }) {
               <View style={styles.avatarWrapper}>
                 <Image source={{ uri: member.avatar }} style={styles.avatar} />
                 <View style={[styles.statusBadge, { backgroundColor: isPositive ? COLORS.primary : COLORS.accent }]}>
-                  <Text style={styles.statusBadgeText}>{isPositive ? '↑' : '↓'}</Text>
+                  <Text style={styles.statusBadgeText}>{isPositive ? "↑" : "↓"}</Text>
                 </View>
               </View>
               <Text style={styles.memberName}>{member.name}</Text>
@@ -142,6 +140,7 @@ function ExpenseItem({ expense }: { expense: Expense }) {
 
 function ExpenseDateGroup({ group }: { group: GroupedExpenses }) {
   const total = group.expenses.reduce((a, e) => a + e.amount, 0);
+
   return (
     <View style={styles.dateGroup}>
       <View style={styles.dateHeaderRow}>
@@ -155,17 +154,23 @@ function ExpenseDateGroup({ group }: { group: GroupedExpenses }) {
   );
 }
 
-// --- Tab Bar ---
 type TabItem = { id: string; icon: React.ReactNode };
+
 const tabs: TabItem[] = [
-  { id: 'list', icon: <ChecklistIcon size={24} color={COLORS.primary} /> },
-  { id: 'wallet', icon: <ShoppingBagIcon size={24} color={COLORS.primary} /> },
-  { id: 'home', icon: <HomeIcon size={24} color={COLORS.primary} /> },
-  { id: 'calendar', icon: <CalendarIcon size={24} color={COLORS.primary} /> },
-  { id: 'flag', icon: <ExpensesIcon size={24} color={COLORS.primary} /> },
+  { id: "list", icon: <ChecklistIcon size={24} color={COLORS.primary} /> },
+  { id: "wallet", icon: <ShoppingBagIcon size={24} color={COLORS.primary} /> },
+  { id: "home", icon: <HomeIcon size={24} color={COLORS.primary} /> },
+  { id: "calendar", icon: <CalendarIcon size={24} color={COLORS.primary} /> },
+  { id: "flag", icon: <ExpensesIcon size={24} color={COLORS.primary} /> },
 ];
 
-function BottomTabBar({ activeTab, onTabPress }: { activeTab: string; onTabPress: (id: string) => void }) {
+function BottomTabBar({
+  activeTab,
+  onTabPress,
+}: {
+  activeTab: string;
+  onTabPress: (id: string) => void;
+}) {
   return (
     <View style={styles.tabBar}>
       {tabs.map((tab) => (
@@ -174,7 +179,7 @@ function BottomTabBar({ activeTab, onTabPress }: { activeTab: string; onTabPress
           style={[styles.tabItem, activeTab === tab.id && styles.tabItemActive]}
           onPress={() => onTabPress(tab.id)}
         >
-          {activeTab === tab.id && <View style={styles.tabActiveIndicator} />}
+          {activeTab === tab.id ? <View style={styles.tabActiveIndicator} /> : null}
           <Text style={styles.tabIcon}>{tab.icon}</Text>
         </TouchableOpacity>
       ))}
@@ -182,40 +187,38 @@ function BottomTabBar({ activeTab, onTabPress }: { activeTab: string; onTabPress
   );
 }
 
-// --- Main Screen ---
 export default function ExpensesScreen({
   onBack,
 }: {
   onBack?: () => void;
 }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = React.useState('flag');
-  const [expenseName, setExpenseName] = React.useState('Groceries');
-  const [expensePrice, setExpensePrice] = React.useState('25');
-  const [expenseDue, setExpenseDue] = React.useState(() =>
-    new Date().toISOString().slice(0, 10),
-  );
-  const [expenseIdToDelete, setExpenseIdToDelete] = React.useState('');
+  const [activeTab, setActiveTab] = React.useState("flag");
+  const [expenseName, setExpenseName] = React.useState("Groceries");
+  const [expensePrice, setExpensePrice] = React.useState("25");
+  const [expenseDue, setExpenseDue] = React.useState(() => new Date().toISOString().slice(0, 10));
+  const [expenseIdToDelete, setExpenseIdToDelete] = React.useState("");
   const [expenseApiBusy, setExpenseApiBusy] = React.useState(false);
-  const [expenseFetchPreview, setExpenseFetchPreview] = React.useState('');
-  const [expenseIdForGet, setExpenseIdForGet] = React.useState('');
+  const [expenseFetchPreview, setExpenseFetchPreview] = React.useState("");
+  const [expenseIdForGet, setExpenseIdForGet] = React.useState("");
   const [expensesUrgentOnly, setExpensesUrgentOnly] = React.useState(false);
-  const [updateExpenseId, setUpdateExpenseId] = React.useState('');
-  const [updateExpenseName, setUpdateExpenseName] = React.useState('');
+  const [updateExpenseId, setUpdateExpenseId] = React.useState("");
+  const [updateExpenseName, setUpdateExpenseName] = React.useState("");
 
   const handleSplitMoney = () => {
-    router.push('/splitMoney');
+    router.push("/splitMoney");
   };
 
   async function createExpenseApi() {
     const price = Number.parseFloat(expensePrice);
     if (!expenseName.trim() || Number.isNaN(price)) {
-      Alert.alert('Invalid', 'Enter a name and numeric price.');
+      Alert.alert("Invalid", "Enter a name and numeric price.");
       return;
     }
+
     setExpenseApiBusy(true);
     try {
-      const res = (await apiPost('/expenses', {
+      const res = (await apiPost("/expenses", {
         house_id: API_HOUSE_ID,
         name: expenseName.trim(),
         price,
@@ -225,9 +228,10 @@ export default function ExpensesScreen({
         is_urgent: false,
         due_date: expenseDue,
       })) as { expense_id?: string; message?: string };
-      Alert.alert('Expense created', res.expense_id ?? res.message ?? 'OK');
+
+      Alert.alert("Expense created", res.expense_id ?? res.message ?? "OK");
     } catch (e) {
-      Alert.alert('Create failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert("Create failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
       setExpenseApiBusy(false);
     }
@@ -236,16 +240,17 @@ export default function ExpensesScreen({
   async function deleteExpenseApi() {
     const id = expenseIdToDelete.trim();
     if (!id) {
-      Alert.alert('Missing id', 'Enter expense_id to delete.');
+      Alert.alert("Missing id", "Enter expense_id to delete.");
       return;
     }
+
     setExpenseApiBusy(true);
     try {
-      await apiDelete('/expenses', { expense_id: id });
-      Alert.alert('Deleted', 'Expense removed.');
-      setExpenseIdToDelete('');
+      await apiDelete("/expenses", { expense_id: id });
+      Alert.alert("Deleted", "Expense removed.");
+      setExpenseIdToDelete("");
     } catch (e) {
-      Alert.alert('Delete failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert("Delete failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
       setExpenseApiBusy(false);
     }
@@ -258,16 +263,17 @@ export default function ExpensesScreen({
   async function getExpenseOne() {
     const id = expenseIdForGet.trim();
     if (!id) {
-      Alert.alert('GET /expense', 'Enter expense_id.');
+      Alert.alert("GET /expense", "Enter expense_id.");
       return;
     }
+
     setExpenseApiBusy(true);
     try {
-      const data = await apiGetWithBody('/expense', { expense_id: id });
+      const data = await apiGetWithBody("/expense", { expense_id: id });
       const items = extractDynamoItems(data);
-      setPreview('GET /expense', items[0] ?? data);
+      setPreview("GET /expense", items[0] ?? data);
     } catch (e) {
-      Alert.alert('Fetch failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert("Fetch failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
       setExpenseApiBusy(false);
     }
@@ -276,13 +282,13 @@ export default function ExpensesScreen({
   async function getExpensesHouse() {
     setExpenseApiBusy(true);
     try {
-      const data = await apiGetWithBody('/expenses/house', {
+      const data = await apiGetWithBody("/expenses/house", {
         house_id: API_HOUSE_ID,
         get_urgent: expensesUrgentOnly,
       });
-      setPreview('GET /expenses/house', extractDynamoItems(data));
+      setPreview("GET /expenses/house", extractDynamoItems(data));
     } catch (e) {
-      Alert.alert('Fetch failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert("Fetch failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
       setExpenseApiBusy(false);
     }
@@ -291,13 +297,13 @@ export default function ExpensesScreen({
   async function getExpensesOwer() {
     setExpenseApiBusy(true);
     try {
-      const data = await apiGetWithBody('/expenses/ower', {
+      const data = await apiGetWithBody("/expenses/ower", {
         house_id: API_HOUSE_ID,
         user_id: API_USER_ID,
       });
-      setPreview('GET /expenses/ower', extractDynamoItems(data));
+      setPreview("GET /expenses/ower", extractDynamoItems(data));
     } catch (e) {
-      Alert.alert('Fetch failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert("Fetch failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
       setExpenseApiBusy(false);
     }
@@ -306,13 +312,13 @@ export default function ExpensesScreen({
   async function getExpensesPayer() {
     setExpenseApiBusy(true);
     try {
-      const data = await apiGetWithBody('/expenses/payer', {
+      const data = await apiGetWithBody("/expenses/payer", {
         house_id: API_HOUSE_ID,
         user_id: API_USER_ID,
       });
-      setPreview('GET /expenses/payer', extractDynamoItems(data));
+      setPreview("GET /expenses/payer", extractDynamoItems(data));
     } catch (e) {
-      Alert.alert('Fetch failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert("Fetch failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
       setExpenseApiBusy(false);
     }
@@ -321,14 +327,14 @@ export default function ExpensesScreen({
   async function simplifyExpensesHouse() {
     setExpenseApiBusy(true);
     try {
-      const res = await apiPost('/expenses/simplify', {
+      const res = await apiPost("/expenses/simplify", {
         house_id: API_HOUSE_ID,
         creator: API_USER_ID,
       });
-      setPreview('POST /expenses/simplify', res);
-      Alert.alert('Simplified', 'New consolidated expense created (see preview).');
+      setPreview("POST /expenses/simplify", res);
+      Alert.alert("Simplified", "New consolidated expense created (see preview).");
     } catch (e) {
-      Alert.alert('Simplify failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert("Simplify failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
       setExpenseApiBusy(false);
     }
@@ -337,240 +343,255 @@ export default function ExpensesScreen({
   async function updateExpenseApi() {
     const expense_id = updateExpenseId.trim();
     const name = updateExpenseName.trim();
+
     if (!expense_id || !name) {
-      Alert.alert('PUT /expenses', 'Enter expense_id and new name.');
+      Alert.alert("PUT /expenses", "Enter expense_id and new name.");
       return;
     }
+
     setExpenseApiBusy(true);
     try {
-      await apiPut('/expenses', { expense_id, name });
-      Alert.alert('Updated', 'Expense saved.');
+      await apiPut("/expenses", { expense_id, name });
+      Alert.alert("Updated", "Expense saved.");
     } catch (e) {
-      Alert.alert('Update failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert("Update failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
       setExpenseApiBusy(false);
     }
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <BackgroundGlows />
-      <StatusBar barStyle="dark-content" />
+    <GradientBackground>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <View style={styles.backButtonInner}>
-            <Text style={styles.backArrow}>←</Text>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <View style={styles.backButtonInner}>
+              <Text style={styles.backArrow}>←</Text>
+            </View>
+          </TouchableOpacity>
+
+          <View>
+            <Text style={styles.headerTitle}>Expenses</Text>
+            <Text style={styles.headerSubtitle}>March 2026</Text>
           </View>
-        </TouchableOpacity>
-        <View>
-          <Text style={styles.headerTitle}>Expenses</Text>
-          <Text style={styles.headerSubtitle}>March 2026</Text>
+
+          <TouchableOpacity style={styles.notifButton}>
+            <BellIcon size={22} color={COLORS.textDark} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.notifButton}>
-          <BellIcon size={22} color={COLORS.textDark} />
-          <View style={styles.notifDot} />
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.accentBar} />
+        <View style={styles.accentBar} />
 
-      {/* Content */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <SplitTableCard members={splitMembers} />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <SplitTableCard members={splitMembers} />
 
-        <Text style={styles.sectionTitle}>Recent Expenses</Text>
+          <Text style={styles.sectionTitle}>Recent Expenses</Text>
 
-        {groupedExpenses.map((group) => (
-          <ExpenseDateGroup key={group.date} group={group} />
-        ))}
+          {groupedExpenses.map((group) => (
+            <ExpenseDateGroup key={group.date} group={group} />
+          ))}
 
-        <Text style={styles.sectionTitle}>Fetch / simplify / update</Text>
-        <View style={styles.apiCard}>
-          <Text style={styles.apiHint}>
-            GET handlers use a JSON body (see apiGetWithBody). Preview is truncated.
-          </Text>
-          <TextInput
-            style={styles.apiInput}
-            value={expenseIdForGet}
-            onChangeText={setExpenseIdForGet}
-            placeholder="expense_id for GET /expense"
-            placeholderTextColor={COLORS.textMuted}
-            autoCapitalize="none"
-          />
-          <TouchableOpacity
-            style={styles.apiSecondaryBtn}
-            onPress={getExpenseOne}
-            disabled={expenseApiBusy}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.apiSecondaryBtnText}>GET /expense</Text>
-          </TouchableOpacity>
-          <View style={styles.apiRowInline}>
-            <Text style={styles.apiInlineLabel}>Urgent only (house query)</Text>
-            <Switch
-              value={expensesUrgentOnly}
-              onValueChange={setExpensesUrgentOnly}
-              trackColor={{ false: COLORS.border, true: `${COLORS.secondary}80` }}
-            />
-          </View>
-          <TouchableOpacity
-            style={styles.apiSecondaryBtn}
-            onPress={getExpensesHouse}
-            disabled={expenseApiBusy}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.apiSecondaryBtnText}>GET /expenses/house</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.apiSecondaryBtn}
-            onPress={getExpensesOwer}
-            disabled={expenseApiBusy}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.apiSecondaryBtnText}>GET /expenses/ower</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.apiSecondaryBtn}
-            onPress={getExpensesPayer}
-            disabled={expenseApiBusy}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.apiSecondaryBtnText}>GET /expenses/payer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.apiSimplifyBtn}
-            onPress={simplifyExpensesHouse}
-            disabled={expenseApiBusy}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.apiPrimaryBtnText}>POST /expenses/simplify</Text>
-          </TouchableOpacity>
-          <TextInput
-            style={styles.apiInput}
-            value={updateExpenseId}
-            onChangeText={setUpdateExpenseId}
-            placeholder="expense_id for PUT /expenses"
-            placeholderTextColor={COLORS.textMuted}
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.apiInput}
-            value={updateExpenseName}
-            onChangeText={setUpdateExpenseName}
-            placeholder="New name"
-            placeholderTextColor={COLORS.textMuted}
-          />
-          <TouchableOpacity
-            style={styles.apiPrimaryBtn}
-            onPress={updateExpenseApi}
-            disabled={expenseApiBusy}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.apiPrimaryBtnText}>PUT /expenses</Text>
-          </TouchableOpacity>
-          <ScrollView
-            style={styles.apiPreviewScroll}
-            nestedScrollEnabled
-            keyboardShouldPersistTaps="handled"
-          >
-            <Text style={styles.apiPreviewText} selectable>
-              {expenseFetchPreview || '—'}
+          <Text style={styles.sectionTitle}>Fetch / simplify / update</Text>
+          <View style={styles.apiCard}>
+            <Text style={styles.apiHint}>
+              GET handlers use a JSON body (see apiGetWithBody). Preview is truncated.
             </Text>
-          </ScrollView>
-        </View>
 
-        <Text style={styles.sectionTitle}>Expenses API</Text>
-        <View style={styles.apiCard}>
-          <Text style={styles.apiHint}>POST /expenses and DELETE /expenses (ids from apiConfig)</Text>
-          <TextInput
-            style={styles.apiInput}
-            value={expenseName}
-            onChangeText={setExpenseName}
-            placeholder="Name"
-            placeholderTextColor={COLORS.textMuted}
-          />
-          <TextInput
-            style={styles.apiInput}
-            value={expensePrice}
-            onChangeText={setExpensePrice}
-            placeholder="Price"
-            placeholderTextColor={COLORS.textMuted}
-            keyboardType="decimal-pad"
-          />
-          <TextInput
-            style={styles.apiInput}
-            value={expenseDue}
-            onChangeText={setExpenseDue}
-            placeholder="Due date YYYY-MM-DD"
-            placeholderTextColor={COLORS.textMuted}
-            autoCapitalize="none"
-          />
-          <TouchableOpacity
-            style={styles.apiPrimaryBtn}
-            onPress={createExpenseApi}
-            disabled={expenseApiBusy}
-            activeOpacity={0.85}
-          >
-            {expenseApiBusy ? (
-              <ActivityIndicator color={COLORS.white} />
-            ) : (
-              <Text style={styles.apiPrimaryBtnText}>Create expense</Text>
-            )}
-          </TouchableOpacity>
-          <TextInput
-            style={styles.apiInput}
-            value={expenseIdToDelete}
-            onChangeText={setExpenseIdToDelete}
-            placeholder="expense_id to delete"
-            placeholderTextColor={COLORS.textMuted}
-            autoCapitalize="none"
-          />
-          <TouchableOpacity
-            style={styles.apiDangerBtn}
-            onPress={deleteExpenseApi}
-            disabled={expenseApiBusy}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.apiPrimaryBtnText}>Delete expense</Text>
-          </TouchableOpacity>
-        </View>
+            <TextInput
+              style={styles.apiInput}
+              value={expenseIdForGet}
+              onChangeText={setExpenseIdForGet}
+              placeholder="expense_id for GET /expense"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="none"
+            />
 
-        <View style={{ height: 120 }} />
-      </ScrollView>
+            <TouchableOpacity
+              style={styles.apiSecondaryBtn}
+              onPress={getExpenseOne}
+              disabled={expenseApiBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.apiSecondaryBtnText}>GET /expense</Text>
+            </TouchableOpacity>
 
-      {/* Split Money FAB */}
-      <TouchableOpacity style={styles.splitMoneyButton} onPress={handleSplitMoney} activeOpacity={0.85}>
-        <View style={styles.splitMoneyIconCircle}>
-          <Text style={styles.splitMoneyIconText}>$</Text>
-        </View>
-        <Text style={styles.splitMoneyText}>Split Money</Text>
-      </TouchableOpacity>
+            <View style={styles.apiRowInline}>
+              <Text style={styles.apiInlineLabel}>Urgent only (house query)</Text>
+              <Switch
+                value={expensesUrgentOnly}
+                onValueChange={setExpensesUrgentOnly}
+                trackColor={{ false: COLORS.border, true: `${COLORS.secondary}80` }}
+              />
+            </View>
 
-      {/* Bottom Tab Bar */}
-      <BottomTabBar activeTab={activeTab} onTabPress={setActiveTab} />
-    </SafeAreaView>
+            <TouchableOpacity
+              style={styles.apiSecondaryBtn}
+              onPress={getExpensesHouse}
+              disabled={expenseApiBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.apiSecondaryBtnText}>GET /expenses/house</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.apiSecondaryBtn}
+              onPress={getExpensesOwer}
+              disabled={expenseApiBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.apiSecondaryBtnText}>GET /expenses/ower</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.apiSecondaryBtn}
+              onPress={getExpensesPayer}
+              disabled={expenseApiBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.apiSecondaryBtnText}>GET /expenses/payer</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.apiSimplifyBtn}
+              onPress={simplifyExpensesHouse}
+              disabled={expenseApiBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.apiPrimaryBtnText}>POST /expenses/simplify</Text>
+            </TouchableOpacity>
+
+            <TextInput
+              style={styles.apiInput}
+              value={updateExpenseId}
+              onChangeText={setUpdateExpenseId}
+              placeholder="expense_id for PUT /expenses"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="none"
+            />
+
+            <TextInput
+              style={styles.apiInput}
+              value={updateExpenseName}
+              onChangeText={setUpdateExpenseName}
+              placeholder="New name"
+              placeholderTextColor={COLORS.textMuted}
+            />
+
+            <TouchableOpacity
+              style={styles.apiPrimaryBtn}
+              onPress={updateExpenseApi}
+              disabled={expenseApiBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.apiPrimaryBtnText}>PUT /expenses</Text>
+            </TouchableOpacity>
+
+            <ScrollView
+              style={styles.apiPreviewScroll}
+              nestedScrollEnabled
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={styles.apiPreviewText} selectable>
+                {expenseFetchPreview || "—"}
+              </Text>
+            </ScrollView>
+          </View>
+
+          <Text style={styles.sectionTitle}>Expenses API</Text>
+          <View style={styles.apiCard}>
+            <Text style={styles.apiHint}>POST /expenses and DELETE /expenses (ids from apiConfig)</Text>
+
+            <TextInput
+              style={styles.apiInput}
+              value={expenseName}
+              onChangeText={setExpenseName}
+              placeholder="Name"
+              placeholderTextColor={COLORS.textMuted}
+            />
+
+            <TextInput
+              style={styles.apiInput}
+              value={expensePrice}
+              onChangeText={setExpensePrice}
+              placeholder="Price"
+              placeholderTextColor={COLORS.textMuted}
+              keyboardType="decimal-pad"
+            />
+
+            <TextInput
+              style={styles.apiInput}
+              value={expenseDue}
+              onChangeText={setExpenseDue}
+              placeholder="Due date YYYY-MM-DD"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="none"
+            />
+
+            <TouchableOpacity
+              style={styles.apiPrimaryBtn}
+              onPress={createExpenseApi}
+              disabled={expenseApiBusy}
+              activeOpacity={0.85}
+            >
+              {expenseApiBusy ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={styles.apiPrimaryBtnText}>Create expense</Text>
+              )}
+            </TouchableOpacity>
+
+            <TextInput
+              style={styles.apiInput}
+              value={expenseIdToDelete}
+              onChangeText={setExpenseIdToDelete}
+              placeholder="expense_id to delete"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="none"
+            />
+
+            <TouchableOpacity
+              style={styles.apiDangerBtn}
+              onPress={deleteExpenseApi}
+              disabled={expenseApiBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.apiPrimaryBtnText}>Delete expense</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ height: 120 }} />
+        </ScrollView>
+
+        <TouchableOpacity style={styles.splitMoneyButton} onPress={handleSplitMoney} activeOpacity={0.85}>
+          <View style={styles.splitMoneyIconCircle}>
+            <Text style={styles.splitMoneyIconText}>$</Text>
+          </View>
+          <Text style={styles.splitMoneyText}>Split Money</Text>
+        </TouchableOpacity>
+
+        <BottomTabBar activeTab={activeTab} onTabPress={setActiveTab} />
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
-
-// --- Styles ---
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: "transparent",
   },
 
-  // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 12,
@@ -581,11 +602,11 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 12,
     backgroundColor: COLORS.white,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: COLORS.border,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.07,
     shadowRadius: 3,
@@ -594,27 +615,27 @@ const styles = StyleSheet.create({
   backArrow: {
     fontSize: 18,
     color: COLORS.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.textDark,
     letterSpacing: -0.4,
-    textAlign: 'center',
+    textAlign: "center",
   },
   headerSubtitle: {
     fontSize: 12,
     color: COLORS.textMuted,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 1,
   },
   notifButton: {
-    position: 'relative',
+    position: "relative",
     padding: 4,
   },
   notifDot: {
-    position: 'absolute',
+    position: "absolute",
     top: 4,
     right: 4,
     width: 8,
@@ -639,10 +660,9 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
 
-  // Section title
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textDark,
     letterSpacing: -0.2,
     marginBottom: 12,
@@ -655,7 +675,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(103, 141, 88, 0.12)',
+    borderColor: "rgba(103, 141, 88, 0.12)",
     gap: 10,
   },
   apiHint: {
@@ -677,45 +697,49 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderRadius: 12,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   apiDangerBtn: {
-    backgroundColor: '#B0524A',
+    backgroundColor: "#B0524A",
     borderRadius: 12,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   apiPrimaryBtnText: {
     color: COLORS.white,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 15,
   },
   apiSecondaryBtn: {
     backgroundColor: `${COLORS.secondary}30`,
     borderRadius: 12,
     paddingVertical: 10,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
     borderColor: COLORS.secondary,
   },
   apiSecondaryBtnText: {
     color: COLORS.primary,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 14,
   },
   apiSimplifyBtn: {
     backgroundColor: COLORS.secondary,
     borderRadius: 12,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   apiRowInline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginVertical: 4,
   },
-  apiInlineLabel: { fontSize: 13, color: COLORS.textDark, fontWeight: '600' },
+  apiInlineLabel: {
+    fontSize: 13,
+    color: COLORS.textDark,
+    fontWeight: "600",
+  },
   apiPreviewScroll: {
     maxHeight: 180,
     marginTop: 8,
@@ -727,19 +751,18 @@ const styles = StyleSheet.create({
   },
   apiPreviewText: {
     fontSize: 11,
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
     color: COLORS.textDark,
   },
 
-  // Split Table Card
   splitCard: {
     backgroundColor: COLORS.cardBg,
     borderRadius: 20,
     padding: 20,
     marginBottom: 22,
     borderWidth: 1,
-    borderColor: 'rgba(103, 141, 88, 0.12)',
-    shadowColor: '#2C3A22',
+    borderColor: "rgba(103, 141, 88, 0.12)",
+    shadowColor: "#2C3A22",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -750,18 +773,18 @@ const styles = StyleSheet.create({
   },
   splitTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.textDark,
     letterSpacing: -0.3,
     marginBottom: 6,
   },
   splitSummaryRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   splitSummaryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
     backgroundColor: `${COLORS.primary}15`,
     borderRadius: 8,
@@ -776,18 +799,18 @@ const styles = StyleSheet.create({
   splitSummaryText: {
     fontSize: 12,
     color: COLORS.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   membersRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
   },
   memberItem: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 4,
   },
   avatarWrapper: {
-    position: 'relative',
+    position: "relative",
     marginBottom: 4,
   },
   avatar: {
@@ -798,63 +821,61 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   statusBadge: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -2,
     right: -2,
     width: 20,
     height: 20,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1.5,
     borderColor: COLORS.white,
   },
   statusBadgeText: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.white,
   },
   memberName: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
   },
   memberAmount: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
-  // Date Groups
   dateGroup: { marginBottom: 18 },
   dateHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
   },
   dateHeader: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textMuted,
     letterSpacing: 0.3,
   },
   dateTotal: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textDark,
   },
 
-  // Expense Item
   expenseItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.cardBg,
     borderRadius: 14,
     padding: 14,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: 'rgba(103, 141, 88, 0.08)',
-    shadowColor: '#2C3A22',
+    borderColor: "rgba(103, 141, 88, 0.08)",
+    shadowColor: "#2C3A22",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -865,10 +886,10 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 12,
     backgroundColor: `${COLORS.secondary}30`,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   expenseIconImage: {
     width: 42,
@@ -878,7 +899,7 @@ const styles = StyleSheet.create({
   expenseInfo: { flex: 1 },
   expenseDescription: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textDark,
   },
   expenseDate: {
@@ -894,17 +915,16 @@ const styles = StyleSheet.create({
   },
   expenseAmount: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.primary,
   },
 
-  // Split Money FAB
   splitMoneyButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 82,
     right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.accent,
     borderRadius: 28,
     paddingVertical: 12,
@@ -921,33 +941,32 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     backgroundColor: COLORS.white,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 10,
   },
   splitMoneyIconText: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.accent,
   },
   splitMoneyText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.white,
   },
 
-  // Tab Bar
   tabBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
     backgroundColor: COLORS.cardBg,
     paddingVertical: 10,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderTopWidth: 1,
     borderColor: COLORS.border,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -955,12 +974,12 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     padding: 8,
-    alignItems: 'center',
-    position: 'relative',
+    alignItems: "center",
+    position: "relative",
   },
   tabItemActive: {},
   tabActiveIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: 2,
     width: 4,
     height: 4,

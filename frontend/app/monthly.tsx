@@ -1,10 +1,11 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PageHeader } from "./pageHeader";
-import AppBottomNav from "./AppBottomNav";
-import { BackgroundGlows, GLASS_COLORS } from "@/components/glass-ui";
+import {AppBottomNav} from "./AppBottomNav";
+import { GLASS_COLORS } from "@/components/glass-ui";
+import { GradientBackground } from "./gradientBg";
 import { apiGetWithBody, extractDynamoItems } from "@/utils/api";
 import { API_HOUSE_ID } from "./apiConfig";
 
@@ -143,87 +144,88 @@ export default function CalendarPage() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: GLASS_COLORS.bg }}>
-      <BackgroundGlows />
-      <PageHeader title="Calendar" />
-      <View style={styles.container}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRow}>
-          {dateOptions.map((date) => {
-            const isActive = date.id === selectedDateId
-            return (
-              <Pressable
-                key={date.id}
-                onPress={() => setSelectedDateId(date.id)}
-                style={[styles.datePill, isActive ? styles.datePillActive : styles.datePillInactive]}
-              >
-                <Text style={[styles.dateMonth, isActive && styles.dateTextActive]}>{date.month}</Text>
-                <Text style={[styles.dateDay, isActive && styles.dateTextActive]}>{date.day}</Text>
-                <Text style={[styles.dateWeekday, isActive && styles.dateTextActive]}>{date.weekday}</Text>
-              </Pressable>
-            )
-          })}
-        </ScrollView>
+    <GradientBackground>
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
+        <PageHeader title="Calendar" />
+        <View style={styles.container}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRow}>
+            {dateOptions.map((date) => {
+              const isActive = date.id === selectedDateId
+              return (
+                <Pressable
+                  key={date.id}
+                  onPress={() => setSelectedDateId(date.id)}
+                  style={[styles.datePill, isActive ? styles.datePillActive : styles.datePillInactive]}
+                >
+                  <Text style={[styles.dateMonth, isActive && styles.dateTextActive]}>{date.month}</Text>
+                  <Text style={[styles.dateDay, isActive && styles.dateTextActive]}>{date.day}</Text>
+                  <Text style={[styles.dateWeekday, isActive && styles.dateTextActive]}>{date.weekday}</Text>
+                </Pressable>
+              )
+            })}
+          </ScrollView>
 
-        <View style={styles.modeRow}>
-          <Text style={styles.monthViewText}>Month View</Text>
-          <Pressable
-            onPress={() => setViewMode((v) => (v === "Day View" ? "Week View" : "Day View"))}
-            style={styles.modeButton}
-          >
-            <Text style={styles.modeText}>{viewMode}</Text>
-            <Ionicons name="chevron-down" size={18} color="#1a1a1a" />
-          </Pressable>
-        </View>
+          <View style={styles.modeRow}>
+            <Text style={styles.monthViewText}>Month View</Text>
+            <Pressable
+              onPress={() => setViewMode((v) => (v === "Day View" ? "Week View" : "Day View"))}
+              style={styles.modeButton}
+            >
+              <Text style={styles.modeText}>{viewMode}</Text>
+              <Ionicons name="chevron-down" size={18} color="#1a1a1a" />
+            </Pressable>
+          </View>
 
-        <View style={styles.tasksWrap}>
-          {visibleTasks.map((task) => {
-            const statusStyle = statusColors(task.status);
-            return (
-              <View key={task.id} style={styles.taskCard}>
-                <View style={styles.taskTopRow}>
-                  <Text style={styles.taskNote}>{task.note}</Text>
-                  <View style={[styles.colorSwatch, { backgroundColor: task.color }]} />
-                </View>
-                <Text style={styles.taskTitle}>{task.title}</Text>
-                <View style={styles.taskBottomRow}>
-                  <View style={styles.timeRow}>
-                    <Ionicons name="time-outline" size={16} color="#8b7b6b" />
-                    <Text style={styles.timeText}>{task.time}</Text>
+          <View style={styles.tasksWrap}>
+            {visibleTasks.map((task) => {
+              const statusStyle = statusColors(task.status);
+              return (
+                <View key={task.id} style={styles.taskCard}>
+                  <View style={styles.taskTopRow}>
+                    <Text style={styles.taskNote}>{task.note}</Text>
+                    <View style={[styles.colorSwatch, { backgroundColor: task.color }]} />
                   </View>
-                  <View style={styles.statusRow}>
-                    <View style={[styles.statusPill, { backgroundColor: statusStyle.bgColor }]}>
-                      <Text style={[styles.statusText, { color: statusStyle.textColor }]}>{task.status}</Text>
+                  <Text style={styles.taskTitle}>{task.title}</Text>
+                  <View style={styles.taskBottomRow}>
+                    <View style={styles.timeRow}>
+                      <Ionicons name="time-outline" size={16} color="#8b7b6b" />
+                      <Text style={styles.timeText}>{task.time}</Text>
                     </View>
-                    <Pressable
-                      onPress={() => toggleTaskDone(task.id)}
-                      style={[
-                        styles.doneCircle,
-                        task.done ? styles.doneCircleActive : styles.doneCircleInactive,
-                      ]}
-                    >
-                      {task.done ? <Text style={styles.doneCheck}>✓</Text> : null}
-                    </Pressable>
+                    <View style={styles.statusRow}>
+                      <View style={[styles.statusPill, { backgroundColor: statusStyle.bgColor }]}>
+                        <Text style={[styles.statusText, { color: statusStyle.textColor }]}>{task.status}</Text>
+                      </View>
+                      <Pressable
+                        onPress={() => toggleTaskDone(task.id)}
+                        style={[
+                          styles.doneCircle,
+                          task.done ? styles.doneCircleActive : styles.doneCircleInactive,
+                        ]}
+                      >
+                        {task.done ? <Text style={styles.doneCheck}>✓</Text> : null}
+                      </Pressable>
+                    </View>
                   </View>
                 </View>
-              </View>
-            )
-          })}
-        </View>
+              )
+            })}
+          </View>
 
-        {visibleTasks.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No tasks for this day</Text>
-          </View>
-        )}
-        <Pressable style={styles.fab} onPress={() => router.push("/AddTask")}>
-          <View style={styles.fabIconWrap}>
-            <Ionicons name="add" size={20} color="#1a1a1a" />
-          </View>
-          <Text style={styles.fabText}>Add Task</Text>
-        </Pressable>
-        <AppBottomNav />
-      </View>
-    </View>
+          {visibleTasks.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No tasks for this day</Text>
+            </View>
+          )}
+          <Pressable style={styles.fab} onPress={() => router.push("/AddTask")}>
+            <View style={styles.fabIconWrap}>
+              <Ionicons name="add" size={20} color="#1a1a1a" />
+            </View>
+            <Text style={styles.fabText}>Add Task</Text>
+          </Pressable>
+          <AppBottomNav />
+        </View>
+      </SafeAreaView>
+    </GradientBackground>
   )
 }
 

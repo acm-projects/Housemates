@@ -1,315 +1,213 @@
-import { useMemo, useRef, useState } from "react";
+import * as React from 'react'
+import { useState } from 'react'
+import { useRouter } from 'expo-router'
 import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  Alert,
-  Animated,
-  ScrollView,
+  CognitoIdentityProviderClient,
+  InitiateAuthCommand,
+} from '@aws-sdk/client-cognito-identity-provider'
+import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
-  TouchableWithoutFeedback,
-} from "react-native";
-import { router, usePathname } from "expo-router";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { BlurView } from "expo-blur";
-import { useFonts, Nunito_600SemiBold, Nunito_700Bold } from "@expo-google-fonts/nunito";
-import { CognitoIdentityProviderClient, InitiateAuthCommand } from "@aws-sdk/client-cognito-identity-provider";
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native'
+import { GradientBackground } from './gradientBg'
+import { GlassCard, GLASS_COLORS } from '@/components/glass-ui'
+import { AppBottomNav } from '../components/app-bottom-nav'
 
-export default function SignIn() {
-  const [fontsLoaded] = useFonts({
-    Nunito_600SemiBold,
-    Nunito_700Bold,
-  });
+const REGION = 'us-east-2'
+const CLIENT_ID = '22fiai4ujv7oi54lk6o6btq4vu'
+const cognitoClient = new CognitoIdentityProviderClient({ region: REGION })
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+export default function SignInScreen() {
+  const router = useRouter()
 
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const buttonHandlers = useMemo(() => {
-    const pressIn = () => {
-      Animated.spring(scaleAnim, {
-        toValue: 0.97,
-        useNativeDriver: true,
-        speed: 30,
-        bounciness: 6,
-      }).start();
-    };
-
-    const pressOut = () => {
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        speed: 30,
-        bounciness: 6,
-      }).start();
-    };
-
-    return { pressIn, pressOut };
-  }, [scaleAnim]);
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   async function handleSignIn() {
+    if (!email.trim() || !password.trim()) {
+      setError('Please fill out all fields.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
     try {
-      setLoading(true);
-      Keyboard.dismiss();
-
-      const client = new CognitoIdentityProviderClient({
-        region: "us-east-2",
-      });
-
       const command = new InitiateAuthCommand({
-        AuthFlow: "USER_PASSWORD_AUTH",
-        ClientId: "22fiai4ujv7oi54lk6o6btq4vu",
+        AuthFlow: 'USER_PASSWORD_AUTH',
+        ClientId: CLIENT_ID,
         AuthParameters: {
           USERNAME: email.trim().toLowerCase(),
           PASSWORD: password,
         },
-      });
+      })
 
-      const response = await client.send(command);
+      const response = await cognitoClient.send(command)
 
-      const accessToken = response.AuthenticationResult?.AccessToken;
-      if (accessToken) {
-        const apiResponse = await fetch('https://66n4zaxjh4.execute-api.us-east-2.amazonaws.com', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        if (!apiResponse.ok) {
-          throw new Error('API call failed');
-        }
-        const data = await apiResponse.json();
-        console.log('API response:', data);
+      if (response.AuthenticationResult?.AccessToken) {
+        router.replace('/home')
+      } else {
+        setError('Login failed.')
       }
-
-      router.replace("./home");
     } catch (e: any) {
-      Alert.alert("Sign In Failed", String(e?.message ?? e ?? "Unknown error"));
+      setError(String(e?.message || 'Sign in failed'))
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
-  if (!fontsLoaded) return null;
-
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.page}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <Ionicons name="chevron-back" size={28} color="#54669F" />
-        </Pressable>
+    <GradientBackground>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" />
 
-        <Text style={styles.title}>Sign In</Text>
-        <Text style={styles.subtitle}>Sign In To Continue</Text>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Sign In</Text>
+        </View>
 
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.card}>
-              <Text style={styles.fieldLabel}>Email</Text>
+            <GlassCard>
+              <Text style={styles.title}>Welcome Back</Text>
+              <Text style={styles.subtitle}>Sign in to continue</Text>
+
+              <Text style={styles.label}>Email</Text>
               <TextInput
-                style={styles.underlineInput}
-                autoCapitalize="none"
-                keyboardType="email-address"
+                style={styles.input}
                 value={email}
                 onChangeText={setEmail}
-                placeholder=" "
-                placeholderTextColor="transparent"
-                returnKeyType="next"
-                blurOnSubmit={false}
+                placeholder="you@example.com"
+                placeholderTextColor={GLASS_COLORS.textMuted}
+                autoCapitalize="none"
+                keyboardType="email-address"
               />
 
-              <Text style={[styles.fieldLabel, { marginTop: 28 }]}>Password</Text>
+              <Text style={styles.label}>Password</Text>
               <TextInput
-                style={styles.underlineInput}
-                secureTextEntry
+                style={styles.input}
                 value={password}
                 onChangeText={setPassword}
-                placeholder=" "
-                placeholderTextColor="transparent"
-                returnKeyType="done"
-                onSubmitEditing={handleSignIn}
+                placeholder="Password"
+                placeholderTextColor={GLASS_COLORS.textMuted}
+                secureTextEntry
               />
 
-              <Animated.View style={{ transform: [{ scale: scaleAnim }], marginTop: 34, alignSelf: "center" }}>
-                <Pressable
-                  onPress={handleSignIn}
-                  onPressIn={buttonHandlers.pressIn}
-                  onPressOut={buttonHandlers.pressOut}
-                  disabled={loading}
-                  style={({ pressed }) => [
-                    styles.button,
-                    pressed ? { opacity: 0.92 } : null,
-                    loading ? { opacity: 0.7 } : null,
-                  ]}
-                >
-                  <Text style={styles.buttonText}>{loading ? "Signing In..." : "Sign In"}</Text>
-                </Pressable>
-              </Animated.View>
+              {!!error && <Text style={styles.error}>{error}</Text>}
 
-              <Pressable onPress={() => router.push("./signup")} style={{ marginTop: 18 }}>
-                <Text style={styles.link}>Do Not Have An Account? Sign Up</Text>
-              </Pressable>
-            </View>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={handleSignIn}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={GLASS_COLORS.white} />
+                ) : (
+                  <Text style={styles.buttonText}>Sign In</Text>
+                )}
+              </TouchableOpacity>
 
-            <View style={{ height: 110 }} />
+              <TouchableOpacity onPress={() => router.push('/signUp')}>
+                <Text style={styles.link}>Don't have an account? Sign Up</Text>
+              </TouchableOpacity>
+            </GlassCard>
+
+            <View style={{ height: 120 }} />
           </ScrollView>
         </KeyboardAvoidingView>
 
-        <BottomNav />
-      </View>
-    </TouchableWithoutFeedback>
-  );
-}
-
-function BottomNav() {
-  const pathname = usePathname();
-
-  const go = (path: string) => {
-    if (pathname === path) return;
-    router.navigate(path as any);
-  };
-
-  return (
-    <View style={styles.navWrap}>
-      <BlurView intensity={55} tint="light" style={styles.navBar}>
-        <View pointerEvents="none" style={styles.navTint} />
-
-        <Pressable style={styles.navIconButton} onPress={() => go("/tasks")} hitSlop={12}>
-          <Ionicons name="list-outline" size={22} color="#0E0E0E" />
-        </Pressable>
-
-        <Pressable style={styles.navIconButton} onPress={() => go("/shopping")} hitSlop={12}>
-          <Ionicons name="bag-outline" size={22} color="#0E0E0E" />
-        </Pressable>
-
-        <Pressable style={styles.navIconButton} onPress={() => go("/home")} hitSlop={12}>
-          <Ionicons name="home-outline" size={24} color="#0E0E0E" />
-        </Pressable>
-
-        <Pressable style={styles.navIconButton} onPress={() => go("/calendar")} hitSlop={12}>
-          <Ionicons name="calendar-outline" size={22} color="#0E0E0E" />
-        </Pressable>
-
-        <Pressable style={styles.navIconButton} onPress={() => go("/expenses")} hitSlop={12}>
-          <Ionicons name="card-outline" size={22} color="#0E0E0E" />
-        </Pressable>
-      </BlurView>
-    </View>
-  );
+        <AppBottomNav />
+      </SafeAreaView>
+    </GradientBackground>
+  )
 }
 
 const styles = StyleSheet.create({
-  page: {
+  flex: {
     flex: 1,
-    backgroundColor: "#EDF3FF",
-    paddingTop: 70,
-    paddingHorizontal: 22,
   },
-  backButton: {
-    position: "absolute",
-    top: 52,
-    left: 16,
-    padding: 8,
-    zIndex: 10,
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  content: {
+    padding: 16,
+    paddingBottom: 110,
+    gap: 16,
+  },
+  header: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: GLASS_COLORS.title,
   },
   title: {
-    fontSize: 42,
-    textAlign: "center",
-    color: "#54669F",
-    fontFamily: "Nunito_700Bold",
-    marginTop: 10,
+    fontSize: 22,
+    fontWeight: '800',
+    color: GLASS_COLORS.textDark,
   },
   subtitle: {
-    textAlign: "center",
-    marginTop: 6,
-    fontSize: 18,
-    color: "#54669F",
-    fontFamily: "Nunito_600SemiBold",
+    fontSize: 14,
+    color: GLASS_COLORS.textMuted,
+    marginBottom: 16,
   },
-  scrollContent: { paddingTop: 44 },
-  card: {
-    backgroundColor: "#C9D6FF",
-    borderRadius: 22,
-    padding: 26,
-    borderWidth: 1,
-    borderColor: "rgba(84, 102, 159, 0.10)",
-    shadowColor: "#0A1A4A",
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 7,
-  },
-  fieldLabel: {
-    fontSize: 28,
-    color: "#5A6FB0",
-    fontFamily: "Nunito_700Bold",
-  },
-  underlineInput: {
+  label: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: GLASS_COLORS.textMuted,
     marginTop: 10,
-    paddingVertical: 10,
-    fontSize: 18,
-    color: "#1B1B1B",
-    borderBottomWidth: 2,
-    borderBottomColor: "rgba(0,0,0,0.38)",
-    fontFamily: "Nunito_600SemiBold",
+  },
+  input: {
+    marginTop: 6,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    color: GLASS_COLORS.textDark,
   },
   button: {
-    backgroundColor: "#4C5A87",
-    paddingVertical: 16,
-    paddingHorizontal: 52,
-    borderRadius: 18,
-    shadowColor: "#000",
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    marginTop: 20,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: GLASS_COLORS.title,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
-    color: "#0E0E0E",
-    fontSize: 22,
-    fontFamily: "Nunito_700Bold",
+    color: GLASS_COLORS.white,
+    fontWeight: '700',
   },
   link: {
-    textAlign: "center",
-    color: "#54669F",
-    fontFamily: "Nunito_600SemiBold",
-    fontSize: 14,
+    marginTop: 14,
+    textAlign: 'center',
+    color: GLASS_COLORS.title,
+    fontWeight: '600',
   },
-  navWrap: {
-    position: "absolute",
-    left: 16,
-    right: 16,
-    bottom: 26,
+  error: {
+    marginTop: 8,
+    color: '#A63A2C',
+    fontWeight: '600',
   },
-  navBar: {
-    height: 64,
-    borderRadius: 18,
-    overflow: "hidden",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingHorizontal: 18,
-  },
-  navIconButton: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 2,
-  },
-  navTint: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(20, 53, 135, 0.14)",
-  },
-});
+})

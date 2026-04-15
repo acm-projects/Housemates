@@ -7,9 +7,6 @@ Globals:
     Runtime: nodejs24.x
     Timeout: 10
     MemorySize: 256
-    Environment:
-      Variables:
-        TABLE_NAME: !Ref TableName
 
 Parameters:
   Environment:
@@ -19,12 +16,6 @@ Parameters:
   ProjectName:
     Type: String
     Default: housemates
-  TableName:
-    Type: String
-    Description: DynamoDB table name
-  TableArn:
-    Type: String
-    Description: DynamoDB table ARN
 
 Metadata:
   LambdaBuildConfig: &lambda-build
@@ -37,6 +28,21 @@ Metadata:
         - handler.ts
       External:
         - "@aws-sdk/*"
+  DynamoDBPolicies: &dynamodb-crud
+    - DynamoDBCrudPolicy:
+        TableName: Chores_HM
+    - DynamoDBCrudPolicy:
+        TableName: Users_HM
+    - DynamoDBCrudPolicy:
+        TableName: Houses_HM
+    - DynamoDBCrudPolicy:
+        TableName: Expenses_HM
+    - DynamoDBCrudPolicy:
+        TableName: Announcements_HM
+    - DynamoDBCrudPolicy:
+        TableName: ShoppingList_HM
+    - DynamoDBCrudPolicy:
+        TableName: Shopping_HM
 
 Resources:
   HousematesApi:
@@ -59,9 +65,7 @@ Resources:
       CodeUri: functions/hello-world/
       Handler: handler.handler
       Description: Hello world Lambda for API Gateway
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         HelloGet:
           Type: Api
@@ -85,9 +89,7 @@ Resources:
       CodeUri: functions/create-announcement
       Handler: handler.handler
       Description: Creates Announcement
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         AnnouncementPost:
           Type: Api
@@ -96,6 +98,7 @@ Resources:
             Path: /announcements
             Method: POST
     Metadata: *lambda-build
+
   CreateChoreFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -103,9 +106,32 @@ Resources:
       CodeUri: functions/create-chore/
       Handler: handler.handler
       Description: Create chore
+      Environment:
+        Variables:
+          EXPIRE_CHORE_FUNCTION_ARN: !GetAtt ExpireChoreFunction.Arn
+          SCHEDULER_ROLE_ARN: !GetAtt SchedulerExecutionRole.Arn
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+            TableName: Chores_HM
+        - DynamoDBCrudPolicy:
+            TableName: Users_HM
+        - DynamoDBCrudPolicy:
+            TableName: Houses_HM
+        - DynamoDBCrudPolicy:
+            TableName: Expenses_HM
+        - DynamoDBCrudPolicy:
+            TableName: Announcements_HM
+        - DynamoDBCrudPolicy:
+            TableName: ShoppingList_HM
+        - DynamoDBCrudPolicy:
+            TableName: Shopping_HM
+        - Statement:
+            - Effect: Allow
+              Action: scheduler:CreateSchedule
+              Resource: "*"
+            - Effect: Allow
+              Action: iam:PassRole
+              Resource: !GetAtt SchedulerExecutionRole.Arn
       Events:
         ChorePost:
           Type: Api
@@ -122,9 +148,7 @@ Resources:
       CodeUri: functions/create-house/
       Handler: handler.handler
       Description: Create house and expenses bucket
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         HousePost:
           Type: Api
@@ -133,6 +157,7 @@ Resources:
             Path: /house
             Method: Post
     Metadata: *lambda-build
+
   CreateExpenseFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -140,9 +165,7 @@ Resources:
       CodeUri: functions/create-expense/
       Handler: handler.handler
       Description: Create expense
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ExpensePost:
           Type: Api
@@ -151,6 +174,7 @@ Resources:
             Path: /expenses
             Method: Post
     Metadata: *lambda-build
+
   GetExpensesHouseFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -158,9 +182,7 @@ Resources:
       CodeUri: functions/get-expenses-house/
       Handler: handler.handler
       Description: Get Expenses from house_id
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ExpenseGetHouse:
           Type: Api
@@ -168,6 +190,7 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /expenses/house
             Method: Get
+
   GetExpensesOwersFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -175,9 +198,7 @@ Resources:
       CodeUri: functions/get-expenses-ower/
       Handler: handler.handler
       Description: Get expenses where user is an ower
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ExpenseGetOwer:
           Type: Api
@@ -186,6 +207,7 @@ Resources:
             Path: /expenses/ower
             Method: GET
     Metadata: *lambda-build
+
   GetExpensesPayersFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -193,9 +215,7 @@ Resources:
       CodeUri: functions/get-expenses-payer/
       Handler: handler.handler
       Description: Get expenses where user is a payer
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ExpenseGetPayer:
           Type: Api
@@ -204,6 +224,7 @@ Resources:
             Path: /expenses/payer
             Method: GET
     Metadata: *lambda-build
+
   CreateShoppingItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -211,9 +232,7 @@ Resources:
       CodeUri: functions/create-shoppingitem/
       Handler: handler.handler
       Description: Create shopping item in list
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ShoppingItemPost:
           Type: Api
@@ -222,6 +241,7 @@ Resources:
             Path: /shopping/item
             Method: Post
     Metadata: *lambda-build
+
   CreateShoppingListFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -229,9 +249,7 @@ Resources:
       CodeUri: functions/create-shoppinglist/
       Handler: handler.handler
       Description: Create shopping list
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ShoppingListPost:
           Type: Api
@@ -240,6 +258,7 @@ Resources:
             Path: /shopping/list
             Method: Post
     Metadata: *lambda-build
+
   GetAnnouncements:
     Type: AWS::Serverless::Function
     Properties:
@@ -247,9 +266,7 @@ Resources:
       CodeUri: functions/get-announcements/
       Handler: handler.handler
       Description: Get announcements from house id
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         AnnouncementsGet:
           Type: Api
@@ -258,6 +275,7 @@ Resources:
             Path: /announcements
             Method: GET
     Metadata: *lambda-build
+
   GetChoresByHouse:
     Type: AWS::Serverless::Function
     Properties:
@@ -265,9 +283,7 @@ Resources:
       CodeUri: functions/get-chore-house/
       Handler: handler.handler
       Description: Get chores from house id
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ChoresGetHouse:
           Type: Api
@@ -276,6 +292,7 @@ Resources:
             Path: /chores/house
             Method: GET
     Metadata: *lambda-build
+
   GetChoresByUser:
     Type: AWS::Serverless::Function
     Properties:
@@ -283,9 +300,7 @@ Resources:
       CodeUri: functions/get-chore-user/
       Handler: handler.handler
       Description: Get chores from user id
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ChoresGetUser:
           Type: Api
@@ -294,6 +309,7 @@ Resources:
             Path: /chores/user
             Method: GET
     Metadata: *lambda-build
+
   GetShoppingListHouse:
     Type: AWS::Serverless::Function
     Properties:
@@ -301,9 +317,7 @@ Resources:
       CodeUri: functions/get-shoppinglist-house/
       Handler: handler.handler
       Description: Get shopping lists from house id
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ShoppingListGet:
           Type: Api
@@ -311,6 +325,7 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /shopping/list
             Method: GET
+
   GetUserFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -318,9 +333,7 @@ Resources:
       CodeUri: functions/get-user/
       Handler: handler.handler
       Description: Get user by user_id
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         UserGet:
           Type: Api
@@ -329,6 +342,7 @@ Resources:
             Path: /users
             Method: GET
     Metadata: *lambda-build
+
   GetUsersHouseFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -336,9 +350,7 @@ Resources:
       CodeUri: functions/get-users-house/
       Handler: handler.handler
       Description: Get users from house id
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         UsersGetHouse:
           Type: Api
@@ -347,6 +359,7 @@ Resources:
             Path: /users/house
             Method: GET
     Metadata: *lambda-build
+
   GetShoppingItems:
     Type: AWS::Serverless::Function
     Properties:
@@ -354,9 +367,7 @@ Resources:
       CodeUri: functions/get-shoppinglist/
       Handler: handler.handler
       Description: Get shopping items from shoppinglist
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ShoppingItemsGet:
           Type: Api
@@ -365,6 +376,7 @@ Resources:
             Path: /shopping/items
             Method: GET
     Metadata: *lambda-build
+
   GetExpenseFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -372,9 +384,7 @@ Resources:
       CodeUri: functions/get-expense/
       Handler: handler.handler
       Description: Get expense by expense_id
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ExpenseGet:
           Type: Api
@@ -383,6 +393,7 @@ Resources:
             Path: /expense
             Method: GET
     Metadata: *lambda-build
+
   UpdateUserFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -390,9 +401,7 @@ Resources:
       CodeUri: functions/update-user/
       Handler: handler.handler
       Description: Update user info
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         UserPut:
           Type: Api
@@ -401,6 +410,7 @@ Resources:
             Path: /users
             Method: PUT
     Metadata: *lambda-build
+
   UpdateHouseFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -408,9 +418,7 @@ Resources:
       CodeUri: functions/update-house/
       Handler: handler.handler
       Description: Update house info
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         HousePut:
           Type: Api
@@ -419,6 +427,7 @@ Resources:
             Path: /house
             Method: PUT
     Metadata: *lambda-build
+
   UpdateHouseUserFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -426,9 +435,7 @@ Resources:
       CodeUri: functions/update-house-user/
       Handler: handler.handler
       Description: Add a user to a house
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         HouseUserPut:
           Type: Api
@@ -437,6 +444,7 @@ Resources:
             Path: /house/user
             Method: PUT
     Metadata: *lambda-build
+
   UpdateChoreFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -444,9 +452,7 @@ Resources:
       CodeUri: functions/update-chore/
       Handler: handler.handler
       Description: Update chore info
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ChorePut:
           Type: Api
@@ -455,6 +461,7 @@ Resources:
             Path: /chores
             Method: PUT
     Metadata: *lambda-build
+
   UpdateAnnouncementFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -462,9 +469,7 @@ Resources:
       CodeUri: functions/update-announcement/
       Handler: handler.handler
       Description: Update announcement
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         AnnouncementPut:
           Type: Api
@@ -473,6 +478,7 @@ Resources:
             Path: /announcements
             Method: PUT
     Metadata: *lambda-build
+
   UpdateExpenseFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -480,9 +486,7 @@ Resources:
       CodeUri: functions/update-expense/
       Handler: handler.handler
       Description: Update expense
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ExpensePut:
           Type: Api
@@ -491,6 +495,7 @@ Resources:
             Path: /expenses
             Method: PUT
     Metadata: *lambda-build
+
   UpdateShoppingListFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -498,9 +503,7 @@ Resources:
       CodeUri: functions/update-shoppinglist/
       Handler: handler.handler
       Description: Update shopping list
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ShoppingListPut:
           Type: Api
@@ -509,6 +512,7 @@ Resources:
             Path: /shopping/list
             Method: PUT
     Metadata: *lambda-build
+
   UpdateShoppingItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -516,9 +520,7 @@ Resources:
       CodeUri: functions/update-shoppingitem/
       Handler: handler.handler
       Description: Update shopping item
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ShoppingItemPut:
           Type: Api
@@ -527,6 +529,7 @@ Resources:
             Path: /shopping/item
             Method: PUT
     Metadata: *lambda-build
+
   DeleteAnnouncementFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -534,9 +537,7 @@ Resources:
       CodeUri: functions/delete-announcement/
       Handler: handler.handler
       Description: Delete announcement
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         AnnouncementDelete:
           Type: Api
@@ -545,6 +546,7 @@ Resources:
             Path: /announcements
             Method: DELETE
     Metadata: *lambda-build
+
   DeleteChoreFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -552,9 +554,7 @@ Resources:
       CodeUri: functions/delete-chore/
       Handler: handler.handler
       Description: Delete chore
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ChoreDelete:
           Type: Api
@@ -563,6 +563,39 @@ Resources:
             Path: /chores
             Method: DELETE
     Metadata: *lambda-build
+
+  CompleteChoreFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-complete-chore"
+      CodeUri: functions/complete-chore/
+      Handler: handler.handler
+      Description: Mark a chore as completed, advancing rotation and rescheduling for recurring chores
+      Environment:
+        Variables:
+          EXPIRE_CHORE_FUNCTION_ARN: !GetAtt ExpireChoreFunction.Arn
+          SCHEDULER_ROLE_ARN: !GetAtt SchedulerExecutionRole.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: Chores_HM
+        - Statement:
+            - Effect: Allow
+              Action:
+                - scheduler:DeleteSchedule
+                - scheduler:CreateSchedule
+              Resource: "*"
+            - Effect: Allow
+              Action: iam:PassRole
+              Resource: !GetAtt SchedulerExecutionRole.Arn
+      Events:
+        ChoreComplete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HousematesApi
+            Path: /chores/complete
+            Method: POST
+    Metadata: *lambda-build
+
   DeleteShoppingListFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -570,9 +603,7 @@ Resources:
       CodeUri: functions/delete-shopping-list/
       Handler: handler.handler
       Description: Delete shopping list and all its items
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ShoppingListDelete:
           Type: Api
@@ -581,6 +612,7 @@ Resources:
             Path: /shopping/list
             Method: DELETE
     Metadata: *lambda-build
+
   DeleteShoppingItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -588,9 +620,7 @@ Resources:
       CodeUri: functions/delete-shopping-item/
       Handler: handler.handler
       Description: Delete shopping item
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ShoppingItemDelete:
           Type: Api
@@ -599,6 +629,7 @@ Resources:
             Path: /shopping/item
             Method: DELETE
     Metadata: *lambda-build
+
   DeleteExpenseFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -606,9 +637,7 @@ Resources:
       CodeUri: functions/delete-expense/
       Handler: handler.handler
       Description: Delete expense
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ExpenseDelete:
           Type: Api
@@ -617,6 +646,7 @@ Resources:
             Path: /expenses
             Method: DELETE
     Metadata: *lambda-build
+
   DeleteHouseFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -624,9 +654,7 @@ Resources:
       CodeUri: functions/delete-house/
       Handler: handler.handler
       Description: Delete house and all related data
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         HouseDelete:
           Type: Api
@@ -635,6 +663,7 @@ Resources:
             Path: /house
             Method: DELETE
     Metadata: *lambda-build
+
   SimplifyExpenseHouseFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -642,9 +671,7 @@ Resources:
       CodeUri: functions/simplify-expense-house/
       Handler: handler.handler
       Description: Simplify and resolve debts for a house
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+      Policies: *dynamodb-crud
       Events:
         ExpenseSimplifyPost:
           Type: Api
@@ -653,6 +680,35 @@ Resources:
             Path: /expenses/simplify
             Method: POST
     Metadata: *lambda-build
+
+  ExpireChoreFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-expire-chore"
+      CodeUri: functions/expire-chore/
+      Handler: handler.handler
+      Description: Mark chore as overdue when due date passes
+      Policies: *dynamodb-crud
+    Metadata: *lambda-build
+
+  SchedulerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeExpireChore
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt ExpireChoreFunction.Arn
 
 Outputs:
   ApiUrl:

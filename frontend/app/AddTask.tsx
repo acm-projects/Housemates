@@ -1,415 +1,277 @@
 import React, { useState } from 'react'
-import { apiPost } from "@/utils/api"
+import { apiPost } from '@/utils/api'
 import { API_HOUSE_ID, API_USER_ID } from './apiConfig'
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Switch
+  View, Text, StyleSheet, Pressable, SafeAreaView,
+  KeyboardAvoidingView, Platform, ScrollView, Modal, TextInput, TouchableOpacity,
 } from 'react-native'
-import {
-  HomeIcon,
-  ChecklistIcon,
-  ShoppingBagIcon,
-  CalendarIcon,
-  ExpensesIcon,
-  MoneyCircleIcon
-} from './icons'
+import { useRouter } from 'expo-router'
+import { GradientBackground } from './gradientBg'
+import { AppBottomNav } from './AppBottomNav'
+import { taskStore } from './store'
 
-// --- Types ---
 type Props = {
   onBack?: () => void
-  onDone?: (data: { taskName: string; urgent: boolean; time: string }) => void
+  onDone?: (data: {taskName:string; urgent:boolean; time:string; date:string}) => void
 }
 
-// --- API ---
-async function saveTask(data: { taskName: string; urgent: boolean; time: string }) {
+async function saveTaskApi(data: {taskName:string; urgent:boolean; time:string}) {
   try {
-    const result = await apiPost('/chores', {
-      house_id: API_HOUSE_ID,
-      name: data.taskName,
-      description: data.urgent ? 'Urgent' : `Due ${data.time}`,
-      rotation: [API_USER_ID],
-      rrule: 'FREQ=WEEKLY',
+    await apiPost('/chores', {
+      house_id:API_HOUSE_ID, name:data.taskName,
+      description:data.urgent?'Urgent':`Due ${data.time}`,
+      rotation:[API_USER_ID], rrule:'FREQ=WEEKLY',
     })
-    console.log(result)
-  } catch (err) {
-    console.error('Error saving task:', err)
-  }
+  } catch(err) { console.error('Error saving task:', err) }
 }
 
-// --- Colors ---
-export const COLORS = {
-  bg:           '#FDFDFF',
-  cardBg:       '#F2F5FA',   // ← was #D1DAE6; lighter for better contrast
-  primary:      '#0A2239',
-  secondary:    '#176087',
-  accent:       '#ADB6C4',
-  textDark:     '#132E32',
-  textMuted:    '#98AAC5',
-  border:       '#3590F3',
-  borderFocus:  '#ADB6C4',
-  white:        '#FFFFFF',
+const C = {
+  cardBg:'rgba(255,255,255,0.84)', inputBg:'rgba(255,243,216,0.40)',
+  active:'#EC8575', doneBtn:'rgba(255,154,139,0.70)',
+  doneText:'rgba(242,232,220,1)', textDark:'#000', textMuted:'#5C5C5C',
 }
 
-// --- Tab Bar ---
-type TabItem = { id: string; icon: React.ReactNode }
+const HOURS   = ['01','02','03','04','05','06','07','08','09','10','11','12']
+const MINUTES = ['00','05','10','15','20','25','30','35','40','45','50','55']
+const PERIODS = ['AM','PM']
 
-const tabs: TabItem[] = [
-  { id: 'list',     icon: <ChecklistIcon   size={24} color={COLORS.primary} /> },
-  { id: 'wallet',   icon: <ShoppingBagIcon size={24} color={COLORS.primary} /> },
-  { id: 'home',     icon: <HomeIcon        size={24} color={COLORS.primary} /> },
-  { id: 'calendar', icon: <CalendarIcon    size={24} color={COLORS.primary} /> },
-  { id: 'flag',     icon: <ExpensesIcon    size={24} color={COLORS.primary} /> }
-]
-
-function BottomTabBar({
-  activeTab,
-  onTabPress
-}: {
-  activeTab: string
-  onTabPress: (id: string) => void
-}) {
-  return (
-    <View style={styles.tabBar}>
-      {tabs.map(tab => (
-        <TouchableOpacity
-          key={tab.id}
-          style={styles.tabItem}
-          onPress={() => onTabPress(tab.id)}
-        >
-          {activeTab === tab.id && <View style={styles.tabActiveIndicator} />}
-          {tab.icon}
-        </TouchableOpacity>
-      ))}
-    </View>
-  )
+function toDateKey(d: Date) {
+  return [d.getFullYear(),`${d.getMonth()+1}`.padStart(2,'0'),`${d.getDate()}`.padStart(2,'0')].join('-')
+}
+function formatDate(d: Date) {
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
 }
 
-// --- Main Screen ---
-export default function AddTaskScreen({ onBack, onDone }: Props) {
-  const [activeTab,    setActiveTab]    = useState('list')
-  const [taskName,     setTaskName]     = useState('')
-  const [urgent,       setUrgent]       = useState(false)
-  const [time,         setTime]         = useState('00:00')
-  const [focusedField, setFocusedField] = useState<string | null>(null)
-  const [error,        setError]        = useState('')
+export default function AddTaskScreen({onBack, onDone}: Props) {
+  const router = useRouter()
+  const [taskName,  setTaskName]  = useState('')
+  const [urgent,    setUrgent]    = useState(false)
+  const [error,     setError]     = useState('')
+  const [hour,      setHour]      = useState('09')
+  const [minute,    setMinute]    = useState('00')
+  const [period,    setPeriod]    = useState('AM')
+  const [showTime,  setShowTime]  = useState(false)
+  const today = new Date()
+  const [selDate,   setSelDate]   = useState(today)
+  const [showDate,  setShowDate]  = useState(false)
+  const [calMonth,  setCalMonth]  = useState(today.getMonth())
+  const [calYear,   setCalYear]   = useState(today.getFullYear())
+
+  const timeStr  = `${hour}:${minute} ${period}`
+  const dateLabel= formatDate(selDate)
+
+  const daysIn  = (y:number,m:number) => new Date(y,m+1,0).getDate()
+  const firstDay= (y:number,m:number) => new Date(y,m,1).getDay()
+
+  // Working back: try prop first, fall back to router
+  const handleBack = () => { if(onBack) onBack(); else router.back() }
 
   const handleDone = () => {
-    if (!taskName.trim()) {
-      setError('Please enter a task name.')
-      return
-    }
+    if (!taskName.trim()) { setError('Please enter a task name.'); return }
     setError('')
-    saveTask({ taskName, urgent, time })
-    onDone?.({ taskName, urgent, time })
+    taskStore.addTask({
+      id:`task-${Date.now()}`, title:taskName.trim(),
+      note:urgent?'Urgent':'', time:timeStr,
+      dateKey:toDateKey(selDate), status:urgent?'Urgent':'To-do',
+      color:'#f5c6d0', done:false, urgent,
+    })
+    saveTaskApi({taskName, urgent, time:timeStr})
+    onDone?.({taskName, urgent, time:timeStr, date:toDateKey(selDate)})
+    handleBack()
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <GradientBackground>
+      <SafeAreaView style={s.safe}>
+        <View style={s.page}>
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack}>
-          <View style={styles.backButtonInner}>
-            <Text style={styles.backArrow}>←</Text>
+          {/* Header */}
+          <View style={s.topRow}>
+            <Pressable style={({pressed})=>[s.topIconBtn,pressed&&s.pressed]} onPress={handleBack}>
+              <Text style={s.backArrow}>←</Text>
+            </Pressable>
+            <View style={s.titleWrap}><Text style={s.title}>Add Task</Text></View>
+            <View style={s.topIconBtn}/>
           </View>
-        </TouchableOpacity>
-        <View style={styles.headerTextGroup}>
-          <Text style={styles.title}>Add Task</Text>
-          <Text style={styles.subtitle}>What needs to get done?</Text>
+
+          <KeyboardAvoidingView style={s.flex} behavior={Platform.OS==='ios'?'padding':'height'}>
+            <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+              {/* Task name */}
+              <View style={s.rowCard}>
+                <Text style={s.rowLabel}>Add Task</Text>
+                <TextInput style={s.inputBox} value={taskName} onChangeText={setTaskName}
+                  placeholder="" placeholderTextColor={C.textMuted}
+                  cursorColor={C.active} autoCapitalize="sentences" returnKeyType="done"/>
+              </View>
+
+              {/* Mark urgent */}
+              <View style={s.rowCard}>
+                <Text style={s.rowLabel}>Mark Urgent</Text>
+                <Pressable onPress={()=>setUrgent(!urgent)} style={s.toggleOuter}>
+                  <View style={[s.track, urgent&&s.trackOn]}>
+                    <View style={[s.thumb, urgent?s.thumbOn:s.thumbOff]}/>
+                  </View>
+                </Pressable>
+              </View>
+
+              {/* Date picker trigger */}
+              <Pressable style={({pressed})=>[s.rowCard, pressed&&s.pressed]} onPress={()=>setShowDate(true)}>
+                <Text style={s.rowLabel}>Select Date</Text>
+                <View style={s.displayBox}><Text style={s.coral}>{dateLabel}</Text></View>
+              </Pressable>
+
+              {/* Time picker trigger */}
+              <Pressable style={({pressed})=>[s.rowCard, pressed&&s.pressed]} onPress={()=>setShowTime(true)}>
+                <Text style={s.rowLabel}>Enter Time</Text>
+                <View style={s.displayBox}><Text style={s.coral}>{timeStr}</Text></View>
+              </Pressable>
+
+              {error!==''&&<View style={s.errBanner}><Text style={s.errText}>{error}</Text></View>}
+
+              <Pressable style={({pressed})=>[s.doneBtn, pressed&&s.doneBtnPressed]} onPress={handleDone}>
+                <Text style={s.doneBtnText}>Done</Text>
+              </Pressable>
+
+              <View style={{height:110}}/>
+            </ScrollView>
+          </KeyboardAvoidingView>
+
+          <AppBottomNav/>
         </View>
-        <View style={{ width: 38 }} />
-      </View>
 
-      {/* Accent bar */}
-      <View style={styles.accentBar} />
-
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-
-          {/* Task Name */}
-          <Text style={styles.sectionLabel}>TASK DETAILS</Text>
-
-          <View style={[styles.inputCard, focusedField === 'task' && styles.inputCardFocused]}>
-            <Text style={styles.inputLabel}>Task Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Buy groceries"
-              placeholderTextColor={COLORS.textMuted}
-              value={taskName}
-              onChangeText={setTaskName}
-              onFocus={() => setFocusedField('task')}
-              onBlur={() => setFocusedField(null)}
-              cursorColor={COLORS.primary}
-              selectionColor={`${COLORS.primary}40`}
-              autoCapitalize="sentences"
-              returnKeyType="done"
-            />
-          </View>
-
-          <Text style={styles.sectionLabel}>OPTIONS</Text>
-
-          {/* Urgency toggle */}
-          <View style={styles.rowCard}>
-            <View style={styles.rowCardLeft}>
-              <View style={[
-                styles.iconCircle,
-                { backgroundColor: urgent ? `${COLORS.accent}30` : `${COLORS.secondary}50` }
-              ]}>
-                <Text style={styles.iconEmoji}>{urgent ? '🔴' : '🟡'}</Text>
+        {/* ── TIME PICKER ── */}
+        <Modal transparent animationType="fade" visible={showTime} onRequestClose={()=>setShowTime(false)}>
+          <Pressable style={s.overlay} onPress={()=>setShowTime(false)}>
+            <Pressable style={s.pickerCard} onPress={e=>e.stopPropagation()}>
+              <Text style={s.pickerTitle}>Select Time</Text>
+              <View style={s.pickRow}>
+                <View style={s.pickCol}>
+                  <Text style={s.pickLabel}>Hour</Text>
+                  <ScrollView style={s.pickScroll} showsVerticalScrollIndicator={false}>
+                    {HOURS.map(h=>(
+                      <TouchableOpacity key={h} style={[s.chip, hour===h&&s.chipOn]} onPress={()=>setHour(h)}>
+                        <Text style={[s.chipTxt, hour===h&&s.chipTxtOn]}>{h}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+                <View style={s.pickCol}>
+                  <Text style={s.pickLabel}>Min</Text>
+                  <ScrollView style={s.pickScroll} showsVerticalScrollIndicator={false}>
+                    {MINUTES.map(m=>(
+                      <TouchableOpacity key={m} style={[s.chip, minute===m&&s.chipOn]} onPress={()=>setMinute(m)}>
+                        <Text style={[s.chipTxt, minute===m&&s.chipTxtOn]}>{m}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+                <View style={s.pickCol}>
+                  <Text style={s.pickLabel}>AM/PM</Text>
+                  {PERIODS.map(p=>(
+                    <TouchableOpacity key={p} style={[s.chip, period===p&&s.chipOn]} onPress={()=>setPeriod(p)}>
+                      <Text style={[s.chipTxt, period===p&&s.chipTxtOn]}>{p}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-              <View>
-                <Text style={styles.rowCardTitle}>Mark as Urgent</Text>
-                <Text style={styles.rowCardSubtitle}>
-                  {urgent ? 'High priority — shown first' : 'Normal priority'}
-                </Text>
+              <Pressable style={({pressed})=>[s.confirmBtn, pressed&&s.confirmBtnPressed]} onPress={()=>setShowTime(false)}>
+                <Text style={s.confirmTxt}>Confirm</Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </Modal>
+
+        {/* ── DATE PICKER ── */}
+        <Modal transparent animationType="fade" visible={showDate} onRequestClose={()=>setShowDate(false)}>
+          <Pressable style={s.overlay} onPress={()=>setShowDate(false)}>
+            <Pressable style={s.pickerCard} onPress={e=>e.stopPropagation()}>
+              <Text style={s.pickerTitle}>Select Date</Text>
+              <View style={s.calNav}>
+                <TouchableOpacity style={s.calNavBtn} onPress={()=>{if(calMonth===0){setCalMonth(11);setCalYear(y=>y-1)}else setCalMonth(m=>m-1)}}>
+                  <Text style={s.calArrow}>‹</Text>
+                </TouchableOpacity>
+                <Text style={s.calMonthLbl}>{new Date(calYear,calMonth,1).toLocaleString('en-US',{month:'long'})} {calYear}</Text>
+                <TouchableOpacity style={s.calNavBtn} onPress={()=>{if(calMonth===11){setCalMonth(0);setCalYear(y=>y+1)}else setCalMonth(m=>m+1)}}>
+                  <Text style={s.calArrow}>›</Text>
+                </TouchableOpacity>
               </View>
-            </View>
-            <Switch
-              value={urgent}
-              onValueChange={setUrgent}
-              trackColor={{ false: COLORS.border, true: `${COLORS.accent}80` }}
-              thumbColor={urgent ? COLORS.accent : COLORS.cardBg}
-              ios_backgroundColor={COLORS.border}
-            />
-          </View>
-
-          {/* Due Time — MoneyCircleIcon used as the clock/time icon */}
-          <View style={[styles.rowCard, focusedField === 'time' && styles.rowCardFocused]}>
-            <View style={styles.rowCardLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: `${COLORS.secondary}50` }]}>
-                <MoneyCircleIcon size={20} color={COLORS.primary} />
+              <View style={s.weekRow}>
+                {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=><Text key={d} style={s.weekDay}>{d}</Text>)}
               </View>
-              <View>
-                <Text style={styles.inputLabel}>DUE TIME</Text>
-                <Text style={styles.rowCardSubtitle}>Set a reminder</Text>
+              <View style={s.calGrid}>
+                {Array.from({length:firstDay(calYear,calMonth)},(_,i)=><View key={`e${i}`} style={s.dayBlank}/>)}
+                {Array.from({length:daysIn(calYear,calMonth)},(_,i)=>{
+                  const day=i+1, d=new Date(calYear,calMonth,day)
+                  const sel=toDateKey(d)===toDateKey(selDate)
+                  return(
+                    <TouchableOpacity key={day} style={[s.calDay,sel&&s.calDayOn]}
+                      onPress={()=>{setSelDate(d);setShowDate(false)}}>
+                      <Text style={[s.calDayTxt,sel&&s.calDayTxtOn]}>{day}</Text>
+                    </TouchableOpacity>
+                  )
+                })}
               </View>
-            </View>
-            <TextInput
-              style={[styles.inlinePill, focusedField === 'time' && styles.inlinePillFocused]}
-              value={time}
-              onChangeText={setTime}
-              onFocus={() => setFocusedField('time')}
-              onBlur={() => setFocusedField(null)}
-              cursorColor={COLORS.primary}
-              selectionColor={`${COLORS.primary}40`}
-              keyboardType="numbers-and-punctuation"
-              returnKeyType="done"
-              textAlign="center"
-            />
-          </View>
-
-          {/* Error */}
-          {error !== '' && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>⚠ {error}</Text>
-            </View>
-          )}
-
-          {/* Done button */}
-          <TouchableOpacity style={styles.doneButton} onPress={handleDone} activeOpacity={0.85}>
-            <Text style={styles.doneButtonText}>Save Task</Text>
-            <Text style={styles.doneButtonArrow}>→</Text>
-          </TouchableOpacity>
-
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      <BottomTabBar activeTab={activeTab} onTabPress={setActiveTab} />
-
-    </SafeAreaView>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      </SafeAreaView>
+    </GradientBackground>
   )
 }
 
-// --- Styles ---
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-
-  header: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    justifyContent:    'space-between',
-    paddingHorizontal: 20,
-    paddingTop:        18
-  },
-  backButtonInner: {
-    width:           38,
-    height:          38,
-    borderRadius:    12,
-    backgroundColor: COLORS.cardBg,
-    alignItems:      'center',
-    justifyContent:  'center',
-    borderWidth:     1,
-    borderColor:     COLORS.border,
-    shadowColor:     '#000',
-    shadowOffset:    { width: 0, height: 1 },
-    shadowOpacity:   0.07,
-    shadowRadius:    3,
-    elevation:       2
-  },
-  backArrow:       { fontSize: 18, color: COLORS.primary, fontWeight: '600' },
-  headerTextGroup: { flex: 1, alignItems: 'center' },
-  title:           { fontSize: 22, fontWeight: '800', color: COLORS.textDark },
-  subtitle:        { fontSize: 12, color: COLORS.textMuted },
-
-  accentBar: {
-    height:           3,
-    backgroundColor:  COLORS.secondary,
-    marginHorizontal: 20,
-    borderRadius:     2,
-    marginBottom:     4
-  },
-
-  keyboardView:  { flex: 1 },
-  scrollContent: { padding: 20, gap: 12 },
-
-  sectionLabel: {
-    fontSize:      11,
-    fontWeight:    '700',
-    color:         COLORS.primary,
-    letterSpacing: 1.2,
-    marginTop:     4
-  },
-
-  inputCard: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius:    16,
-    borderWidth:     1.5,
-    borderColor:     COLORS.border,
-    padding:         14,
-    shadowColor:     '#2C3A22',
-    shadowOffset:    { width: 0, height: 2 },
-    shadowOpacity:   0.07,
-    shadowRadius:    8,
-    elevation:       2
-  },
-  inputCardFocused: { borderColor: COLORS.primary, backgroundColor: '#F2FAF0' },
-
-  inputLabel: {
-    fontSize:      11,
-    fontWeight:    '600',
-    color:         COLORS.primary,
-    letterSpacing: 0.5,
-    marginBottom:  5
-  },
-  input: {
-    fontSize:        16,
-    fontWeight:      '500',
-    color:           COLORS.textDark,
-    paddingVertical: 2
-  },
-
-  rowCard: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'space-between',
-    backgroundColor: COLORS.cardBg,
-    borderRadius:    16,
-    borderWidth:     1.5,
-    borderColor:     COLORS.border,
-    padding:         14,
-    shadowColor:     '#2C3A22',
-    shadowOffset:    { width: 0, height: 2 },
-    shadowOpacity:   0.07,
-    shadowRadius:    8,
-    elevation:       2
-  },
-  rowCardFocused:  { borderColor: COLORS.primary, backgroundColor: '#F2FAF0' },
-  rowCardLeft:     { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  rowCardTitle:    { fontSize: 15, fontWeight: '600', color: COLORS.textDark },
-  rowCardSubtitle: { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
-
-  iconCircle: {
-    width:          36,
-    height:         36,
-    borderRadius:   10,
-    alignItems:     'center',
-    justifyContent: 'center'
-  },
-  iconEmoji: { fontSize: 18 },
-
-  inlinePill: {
-    backgroundColor:  `${COLORS.primary}12`,
-    borderRadius:     10,
-    borderWidth:      1.5,
-    borderColor:      'transparent',
-    paddingHorizontal: 12,
-    paddingVertical:  7,
-    fontSize:         14,
-    fontWeight:       '700',
-    color:            COLORS.textDark,
-    minWidth:         76,
-    textAlign:        'center'
-  },
-  inlinePillFocused: {
-    borderColor:     COLORS.primary,
-    backgroundColor: `${COLORS.primary}18`
-  },
-
-  errorBanner: {
-    backgroundColor:  '#FFF0EE',
-    borderRadius:     12,
-    borderWidth:      1,
-    borderColor:      COLORS.accent,
-    paddingHorizontal: 14,
-    paddingVertical:  10
-  },
-  errorText: { color: '#B0524A', fontSize: 13, fontWeight: '500' },
-
-  doneButton: {
-    backgroundColor: COLORS.primary,
-    padding:         16,
-    borderRadius:    16,
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'center',
-    gap:             8,
-    marginTop:       6,
-    shadowColor:     COLORS.primary,
-    shadowOffset:    { width: 0, height: 6 },
-    shadowOpacity:   0.3,
-    shadowRadius:    12,
-    elevation:       6
-  },
-  doneButtonText:  { color: '#fff', fontWeight: '700', fontSize: 17 },
-  doneButtonArrow: { color: COLORS.secondary, fontSize: 18, fontWeight: '700' },
-
-  tabBar: {
-    flexDirection:        'row',
-    justifyContent:       'space-around',
-    backgroundColor:      COLORS.cardBg,
-    paddingVertical:      10,
-    borderTopLeftRadius:  20,
-    borderTopRightRadius: 20,
-    borderTopWidth:       1,
-    borderColor:          COLORS.border,
-    shadowColor:          '#000',
-    shadowOffset:         { width: 0, height: -2 },
-    shadowOpacity:        0.05,
-    shadowRadius:         8,
-    elevation:            8
-  },
-  tabItem:            { padding: 8, alignItems: 'center', position: 'relative' },
-  tabActiveIndicator: {
-    position:        'absolute',
-    top:             2,
-    width:           4,
-    height:          4,
-    borderRadius:    2,
-    backgroundColor: COLORS.accent
-  }
+const s = StyleSheet.create({
+  safe:     {flex:1,backgroundColor:'transparent'},
+  page:     {flex:1,paddingHorizontal:16},
+  flex:     {flex:1},
+  topRow:   {flexDirection:'row',alignItems:'center',marginTop:10,marginBottom:18,paddingHorizontal:4},
+  topIconBtn:{width:36,height:36,alignItems:'center',justifyContent:'center'},
+  backArrow:{fontSize:22,color:'#000',fontWeight:'500'},
+  titleWrap:{flex:1,alignItems:'center'},
+  title:    {fontSize:22,fontWeight:'700',color:'#000'},
+  pressed:  {opacity:0.6},
+  scroll:   {paddingTop:26,paddingBottom:24},
+  rowCard:  {width:'100%',minHeight:76,backgroundColor:C.cardBg,borderRadius:18,paddingHorizontal:22,marginBottom:18,flexDirection:'row',alignItems:'center',justifyContent:'space-between',shadowColor:'#000',shadowOffset:{width:0,height:3},shadowOpacity:0.10,shadowRadius:6,elevation:3},
+  rowLabel: {fontSize:17,fontWeight:'500',color:'#000'},
+  inputBox: {width:142,height:50,borderRadius:14,backgroundColor:C.inputBg,fontSize:16,fontWeight:'500',color:'#000',paddingHorizontal:14,textAlign:'center'},
+  displayBox:{width:142,height:50,borderRadius:14,backgroundColor:C.inputBg,alignItems:'center',justifyContent:'center',paddingHorizontal:8},
+  coral:    {color:C.active,fontWeight:'600',fontSize:13,textAlign:'center'},
+  toggleOuter:{width:54,alignItems:'flex-end',justifyContent:'center'},
+  track:    {width:40,height:22,borderRadius:11,backgroundColor:'rgba(255,195,160,0.20)',justifyContent:'center'},
+  trackOn:  {backgroundColor:C.active},
+  thumb:    {position:'absolute',top:2,width:18,height:18,borderRadius:9,backgroundColor:'rgba(236,133,117,0.60)'},
+  thumbOff: {left:2},
+  thumbOn:  {right:2,backgroundColor:'#fff'},
+  errBanner:{backgroundColor:'rgba(255,255,255,0.84)',borderRadius:14,paddingHorizontal:14,paddingVertical:12,marginBottom:18},
+  errText:  {color:C.active,fontSize:13,fontWeight:'500',textAlign:'center'},
+  doneBtn:  {alignSelf:'center',marginTop:6,width:136,height:52,borderRadius:16,backgroundColor:C.doneBtn,alignItems:'center',justifyContent:'center',shadowColor:'#000',shadowOffset:{width:0,height:4},shadowOpacity:0.12,shadowRadius:6,elevation:3},
+  doneBtnPressed:{backgroundColor:'rgba(200,100,90,0.75)'},
+  doneBtnText:{color:C.doneText,fontWeight:'700',fontSize:16},
+  // Modal
+  overlay:  {flex:1,backgroundColor:'rgba(0,0,0,0.35)',justifyContent:'center',alignItems:'center'},
+  pickerCard:{backgroundColor:'#FFF8F5',borderRadius:24,padding:22,width:320,shadowColor:'#000',shadowOffset:{width:0,height:8},shadowOpacity:0.15,shadowRadius:16,elevation:10},
+  pickerTitle:{fontSize:18,fontWeight:'700',color:'#000',textAlign:'center',marginBottom:16},
+  pickRow:  {flexDirection:'row',justifyContent:'space-around',marginBottom:16},
+  pickCol:  {alignItems:'center',flex:1},
+  pickLabel:{fontSize:12,fontWeight:'700',color:'#5C5C5C',marginBottom:8},
+  pickScroll:{maxHeight:160},
+  chip:     {paddingVertical:9,paddingHorizontal:10,borderRadius:10,marginBottom:4,minWidth:48,alignItems:'center'},
+  chipOn:   {backgroundColor:C.active},
+  chipTxt:  {fontSize:15,fontWeight:'600',color:'#000'},
+  chipTxtOn:{color:'#fff'},
+  confirmBtn:{backgroundColor:C.active,borderRadius:14,paddingVertical:13,alignItems:'center'},
+  confirmBtnPressed:{backgroundColor:'#c96d5e'},
+  confirmTxt:{color:'#fff',fontWeight:'700',fontSize:16},
+  calNav:   {flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12},
+  calNavBtn:{width:36,height:36,alignItems:'center',justifyContent:'center'},
+  calArrow: {fontSize:24,color:C.active,fontWeight:'700'},
+  calMonthLbl:{fontSize:16,fontWeight:'700',color:'#000'},
+  weekRow:  {flexDirection:'row',justifyContent:'space-around',marginBottom:6},
+  weekDay:  {width:36,textAlign:'center',fontSize:12,fontWeight:'700',color:'#5C5C5C'},
+  calGrid:  {flexDirection:'row',flexWrap:'wrap'},
+  dayBlank: {width:36,height:36,margin:2},
+  calDay:   {width:36,height:36,margin:2,borderRadius:18,alignItems:'center',justifyContent:'center'},
+  calDayOn: {backgroundColor:C.active},
+  calDayTxt:{fontSize:14,color:'#000',fontWeight:'500'},
+  calDayTxtOn:{color:'#fff',fontWeight:'700'},
 })

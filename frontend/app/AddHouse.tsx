@@ -1,259 +1,135 @@
-import * as React from 'react'
-import { useState } from 'react'
-import { useRouter } from 'expo-router'
+import React, { useState } from 'react'
+import { apiPost } from "@/utils/api"
+import { API_USER_ID } from './apiConfig'
 import {
-  CognitoIdentityProviderClient,
-  SignUpCommand,
-} from '@aws-sdk/client-cognito-identity-provider'
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  View, Text, TextInput, StyleSheet, Pressable,
+  SafeAreaView, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
-import { BlurView } from 'expo-blur'
-import { AppBottomNav } from '../components/app-bottom-nav'
+import { useRouter } from 'expo-router'
+import { GradientBackground } from './gradientBg'
+import { AppBottomNav } from './AppBottomNav'
 
-const REGION = 'us-east-2'
-const CLIENT_ID = '22fiai4ujv7oi54lk6o6btq4vu'
-const cognitoClient = new CognitoIdentityProviderClient({ region: REGION })
+type Props = { onBack?:()=>void; onAddHousemate?:()=>void; onAddHouse?:(data:{houseName:string;password:string})=>void }
 
 const COLORS = {
-  bg: '#F7F3F2',
-  title: '#EC8575',
-  active: '#EC8575',
-  inactive: '#000000',
-  textDark: '#000000',
-  textMuted: '#5E5A58',
-  white: '#FFFFFF',
-  glass: 'rgba(255,255,255,0.18)',
-  border: 'rgba(255,255,255,0.35)',
-  pink: 'rgba(255,154,139,0.7)',
-  orange: 'rgba(255,174,127,0.7)',
-  yellow: 'rgba(255,218,137,0.7)',
+  cardBg:'rgba(255,255,255,0.84)', active:'#EC8575',
+  doneBtn:'rgba(255,154,139,0.70)', doneText:'rgba(242,232,220,1)',
+  textDark:'#000', textMuted:'#5C5C5C', shadow:'#000',
 }
 
-async function signUp(userData: { name: string; email: string; password: string }) {
-  const command = new SignUpCommand({
-    ClientId: CLIENT_ID,
-    Username: userData.email,
-    Password: userData.password,
-    UserAttributes: [
-      { Name: 'email', Value: userData.email },
-      { Name: 'name', Value: userData.name },
-    ],
-  })
-  return cognitoClient.send(command)
+async function addHouseApi(name:string){
+  try { const result = await apiPost("/house",{name,user_id:API_USER_ID}); console.log(result) }
+  catch(err) { console.error("Error adding house:",err) }
 }
 
-function Background() {
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-      <View style={[styles.glow, styles.pinkGlow]} />
-      <View style={[styles.glow, styles.orangeGlow]} />
-      <View style={[styles.glow, styles.yellowGlow]} />
-    </View>
-  )
-}
-
-function GlassCard({ children, style }: { children: React.ReactNode; style?: any }) {
-  return (
-    <BlurView intensity={26} tint="light" style={[styles.glassCard, style]}>
-      {children}
-    </BlurView>
-  )
-}
-
-export default function SignUpScreen() {
+export default function AddHouseScreen({ onBack=()=>{}, onAddHousemate=()=>{}, onAddHouse=()=>{} }: Props) {
   const router = useRouter()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [houseName, setHouseName] = useState('')
   const [password, setPassword] = useState('')
-  const [focusedField, setFocusedField] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [focusedField, setFocusedField] = useState<string|null>(null)
 
-  const handleSignUp = async () => {
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setError('Please fill out all fields.')
-      return
-    }
-    if (password.trim().length < 8) {
-      setError('Password must be at least 8 characters.')
-      return
-    }
+  const handleBack = () => { if(onBack) onBack(); else router.back() }
 
-    setLoading(true)
+  const handleAddHouse = () => {
+    if(!houseName.trim()){setError('Please enter a name for your house.');return}
+    if(password.length<6){setError('Password must be at least 6 characters.');return}
     setError('')
-    try {
-      await signUp({ name: name.trim(), email: email.trim(), password })
-      router.push({ pathname: '/VerifyScreen', params: { email: email.trim() } })
-    } catch (e: any) {
-      const message = String(e?.message || 'Unable to create account.')
-      setError(message)
-    } finally {
-      setLoading(false)
-    }
+    addHouseApi(houseName)
+    onAddHouse({houseName,password})
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
-      <Background />
+    <GradientBackground>
+      <SafeAreaView style={s.safeArea}>
+        <View style={s.page}>
+          <View style={s.topRow}>
+            <Pressable style={({pressed})=>[s.topIconBtn,pressed&&s.pressed]} onPress={handleBack}>
+              <Text style={s.backArrow}>←</Text>
+            </Pressable>
+            <View style={s.titleWrap}><Text style={s.title}>Add a House</Text></View>
+            <View style={s.topIconBtn}/>
+          </View>
 
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
-          <Text style={styles.headerButtonText}>←</Text>
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Create Account</Text>
-          <Text style={styles.headerSubtitle}>Join your housemates today</Text>
+          <KeyboardAvoidingView style={s.flex} behavior={Platform.OS==='ios'?'padding':'height'} keyboardVerticalOffset={Platform.OS==='ios'?0:20}>
+            <ScrollView contentContainerStyle={s.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              <View style={s.mainCard}>
+                <View style={s.fieldBlock}>
+                  <Text style={s.fieldLabel}>Name your House!</Text>
+                  <View style={[s.lineWrap,focusedField==='name'&&s.lineWrapFocused]}>
+                    <TextInput
+                      style={s.lineInput} value={houseName} onChangeText={setHouseName}
+                      onFocus={()=>setFocusedField('name')} onBlur={()=>setFocusedField(null)}
+                      placeholder="" placeholderTextColor={COLORS.textMuted}
+                      cursorColor={COLORS.active} autoCapitalize="words" returnKeyType="next"
+                    />
+                  </View>
+                </View>
+
+                <View style={s.fieldBlock}>
+                  <View style={s.memberRow}>
+                    <Text style={s.fieldLabel}>Add House Members</Text>
+                    <Pressable onPress={onAddHousemate} style={({pressed})=>[s.plusBtn,pressed&&s.pressed]}>
+                      <Text style={s.plusText}>⊕</Text>
+                    </Pressable>
+                  </View>
+                  <View style={s.lineWrap}><View style={s.lineInputStatic}/></View>
+                </View>
+
+                <View style={s.fieldBlockLast}>
+                  <Text style={s.fieldLabel}>Create a Password for Your House</Text>
+                  <View style={[s.lineWrap,focusedField==='password'&&s.lineWrapFocused]}>
+                    <TextInput
+                      style={s.lineInput} value={password} onChangeText={setPassword}
+                      onFocus={()=>setFocusedField('password')} onBlur={()=>setFocusedField(null)}
+                      placeholder="" placeholderTextColor={COLORS.textMuted}
+                      cursorColor={COLORS.active} secureTextEntry autoCapitalize="none"
+                      returnKeyType="done" onSubmitEditing={handleAddHouse}
+                    />
+                  </View>
+                </View>
+
+                {error!==''&&<View style={s.errorBanner}><Text style={s.errorText}>{error}</Text></View>}
+
+                <Pressable style={({pressed})=>[s.addHouseButton,pressed&&s.btnPressed]} onPress={handleAddHouse}>
+                  <Text style={s.addHouseButtonText}>Add House</Text>
+                </Pressable>
+              </View>
+              <View style={{height:120}}/>
+            </ScrollView>
+          </KeyboardAvoidingView>
+          <AppBottomNav/>
         </View>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <GlassCard>
-            <Text style={styles.welcomeTitle}>Welcome home.</Text>
-            <Text style={styles.welcomeDesc}>Create your account to get started with shared living.</Text>
-          </GlassCard>
-
-          <GlassCard>
-            <Text style={styles.sectionLabel}>YOUR DETAILS</Text>
-
-            <View style={[styles.inputWrap, focusedField === 'name' && styles.inputWrapFocused]}>
-              <Text style={styles.inputLabel}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                placeholder="e.g. Jordan Smith"
-                placeholderTextColor={COLORS.textMuted}
-                autoCapitalize="words"
-                onFocus={() => setFocusedField('name')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
-
-            <View style={[styles.inputWrap, focusedField === 'email' && styles.inputWrapFocused]}>
-              <Text style={styles.inputLabel}>Email Address</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="you@example.com"
-                placeholderTextColor={COLORS.textMuted}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
-
-            <View style={[styles.inputWrap, focusedField === 'password' && styles.inputWrapFocused]}>
-              <Text style={styles.inputLabel}>Password</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Min. 8 characters"
-                placeholderTextColor={COLORS.textMuted}
-                secureTextEntry
-                autoCapitalize="none"
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
-
-            {!!error && <Text style={styles.errorText}>{error}</Text>}
-          </GlassCard>
-
-          <TouchableOpacity style={styles.primaryButton} onPress={handleSignUp} disabled={loading}>
-            {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.primaryButtonText}>Create Account</Text>}
-          </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      <AppBottomNav />
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   )
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  safeArea: { flex: 1, backgroundColor: COLORS.bg },
-  content: { padding: 16, paddingBottom: 110, gap: 16 },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerButtonText: { fontSize: 18, color: COLORS.inactive, fontWeight: '700' },
-  headerCenter: { alignItems: 'center' },
-  headerSpacer: { width: 38, height: 38 },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: COLORS.title },
-  headerSubtitle: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
-  glassCard: {
-    borderRadius: 24,
-    overflow: 'hidden',
-    padding: 16,
-    backgroundColor: COLORS.glass,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  sectionLabel: { fontSize: 11, fontWeight: '700', color: COLORS.title, letterSpacing: 1, marginBottom: 12 },
-  welcomeTitle: { fontSize: 22, fontWeight: '800', color: COLORS.textDark },
-  welcomeDesc: { fontSize: 14, color: COLORS.textMuted, marginTop: 4, lineHeight: 20 },
-  inputWrap: {
-    backgroundColor: 'rgba(255,255,255,0.24)',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.38)',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-  },
-  inputWrapFocused: { borderColor: COLORS.title, backgroundColor: 'rgba(255,255,255,0.34)' },
-  inputLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textMuted, marginBottom: 6 },
-  input: { fontSize: 16, fontWeight: '500', color: COLORS.textDark },
-  errorText: { color: '#A63A2C', fontWeight: '600', marginTop: 4 },
-  primaryButton: {
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: COLORS.title,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryButtonText: { color: COLORS.white, fontSize: 16, fontWeight: '800' },
-  glow: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-  },
-  pinkGlow: { left: -20, top: 290, backgroundColor: COLORS.pink },
-  orangeGlow: { right: -18, top: 110, backgroundColor: COLORS.orange },
-  yellowGlow: { right: -8, bottom: 150, backgroundColor: COLORS.yellow },
+const s = StyleSheet.create({
+  safeArea:{flex:1,backgroundColor:'transparent'},
+  page:{flex:1,paddingHorizontal:16},
+  flex:{flex:1},
+  topRow:{flexDirection:'row',alignItems:'center',marginTop:10,marginBottom:18,paddingHorizontal:4},
+  topIconBtn:{width:36,height:36,alignItems:'center',justifyContent:'center'},
+  backArrow:{fontSize:22,color:COLORS.textDark,fontWeight:'500'},
+  titleWrap:{flex:1,alignItems:'center'},
+  title:{fontSize:22,fontWeight:'700',color:COLORS.textDark},
+  pressed:{opacity:0.6},
+  scrollContent:{paddingTop:20,paddingBottom:24},
+  mainCard:{backgroundColor:COLORS.cardBg,borderRadius:24,paddingHorizontal:24,paddingTop:46,paddingBottom:28,minHeight:560,shadowColor:COLORS.shadow,shadowOffset:{width:0,height:4},shadowOpacity:0.12,shadowRadius:7,elevation:4},
+  fieldBlock:{marginBottom:54},
+  fieldBlockLast:{marginBottom:40},
+  fieldLabel:{fontSize:18,color:COLORS.textDark,marginBottom:8,fontWeight:'500'},
+  memberRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
+  plusBtn:{width:32,height:32,alignItems:'center',justifyContent:'center',marginRight:6},
+  plusText:{fontSize:24,color:COLORS.textDark,fontWeight:'400'},
+  lineWrap:{borderBottomWidth:1.5,borderBottomColor:'rgba(0,0,0,0.72)'},
+  lineWrapFocused:{borderBottomColor:COLORS.active},
+  lineInput:{height:36,fontSize:16,color:COLORS.textDark,paddingHorizontal:0,paddingBottom:2,backgroundColor:'transparent'},
+  lineInputStatic:{height:36,backgroundColor:'transparent'},
+  errorBanner:{backgroundColor:'rgba(255,255,255,0.84)',borderRadius:14,paddingHorizontal:14,paddingVertical:12,marginBottom:18},
+  errorText:{color:COLORS.active,fontSize:13,fontWeight:'500',textAlign:'center'},
+  addHouseButton:{alignSelf:'center',marginTop:6,width:136,height:52,borderRadius:16,backgroundColor:COLORS.doneBtn,alignItems:'center',justifyContent:'center',shadowColor:COLORS.shadow,shadowOffset:{width:0,height:4},shadowOpacity:0.12,shadowRadius:6,elevation:3},
+  btnPressed:{backgroundColor:'rgba(200,100,90,0.75)'},
+  addHouseButtonText:{color:COLORS.doneText,fontWeight:'700',fontSize:16},
 })

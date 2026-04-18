@@ -2,70 +2,51 @@ import { Ionicons } from '@expo/vector-icons'
 import { usePathname, useRouter } from 'expo-router'
 import { Pressable, StyleSheet, View } from 'react-native'
 
+const ACTIVE = '#EC8575'
+const INACTIVE = '#000000'
+
 export function AppBottomNav() {
   const router = useRouter()
   const pathname = usePathname()
-
-  const go = (route: '/home' | '/taskPage' | '/ShoppingList' | '/calendar' | '/expenses') => {
-    if (pathname !== route) {
-      router.push(route)
-    }
+  const color = (r: string) => pathname === r ? ACTIVE : INACTIVE
+  const go = (r: '/taskPage' | '/ShoppingList' | '/home' | '/calendar' | '/expenses') => {
+    if (pathname !== r) router.push(r)
   }
-
-  const iconColor = (route: string) => {
-    return pathname === route ? '#111111' : '#6B7280'
-  }
-
   return (
-    <View style={styles.wrap}>
-      <View style={styles.nav}>
-        <Pressable style={styles.navIconButton} onPress={() => go('/home')} hitSlop={12}>
-          <Ionicons name="home-outline" size={22} color={iconColor('/home')} />
+    <View style={s.wrap}>
+      <View style={s.nav}>
+        <Pressable style={({pressed}) => [s.btn, pressed && s.pressed]} onPress={() => go('/taskPage')} hitSlop={12}>
+          <Ionicons name="list-outline" size={22} color={color('/taskPage')} />
         </Pressable>
-
-        <Pressable style={styles.navIconButton} onPress={() => go('/taskPage')} hitSlop={12}>
-          <Ionicons name="checkmark-circle-outline" size={22} color={iconColor('/taskPage')} />
+        <Pressable style={({pressed}) => [s.btn, pressed && s.pressed]} onPress={() => go('/ShoppingList')} hitSlop={12}>
+          <Ionicons name="bag-outline" size={22} color={color('/ShoppingList')} />
         </Pressable>
-
-        <Pressable style={styles.navIconButton} onPress={() => go('/ShoppingList')} hitSlop={12}>
-          <Ionicons name="basket-outline" size={22} color={iconColor('/ShoppingList')} />
+        <Pressable style={({pressed}) => [s.btn, pressed && s.pressed]} onPress={() => go('/home')} hitSlop={12}>
+          <Ionicons name="home-outline" size={22} color={color('/home')} />
         </Pressable>
-
-        <Pressable style={styles.navIconButton} onPress={() => go('/calendar')} hitSlop={12}>
-          <Ionicons name="calendar-outline" size={22} color={iconColor('/calendar')} />
+        <Pressable style={({pressed}) => [s.btn, pressed && s.pressed]} onPress={() => go('/calendar')} hitSlop={12}>
+          <Ionicons name="calendar-outline" size={22} color={color('/calendar')} />
         </Pressable>
-
-        <Pressable style={styles.navIconButton} onPress={() => go('/expenses')} hitSlop={12}>
-          <Ionicons name="card-outline" size={22} color={iconColor('/expenses')} />
+        <Pressable style={({pressed}) => [s.btn, pressed && s.pressed]} onPress={() => go('/expenses')} hitSlop={12}>
+          <Ionicons name="card-outline" size={22} color={color('/expenses')} />
         </Pressable>
       </View>
     </View>
   )
 }
+export default AppBottomNav
 
-const styles = StyleSheet.create({
-  wrap: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 20,
-  },
+const s = StyleSheet.create({
+  wrap: { position:'absolute', left:14, right:14, bottom:10 },
   nav: {
-    height: 64,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.75)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.65)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 10,
+    height:64, borderRadius:22,
+    backgroundColor:'rgba(255,255,255,0.55)',
+    borderWidth:1, borderColor:'rgba(255,255,255,0.7)',
+    flexDirection:'row', alignItems:'center', justifyContent:'space-around',
+    paddingHorizontal:10,
+    shadowColor:'#000', shadowOffset:{width:0,height:4},
+    shadowOpacity:0.08, shadowRadius:12, elevation:8,
   },
-  navIconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  btn: { width:44, height:44, borderRadius:22, alignItems:'center', justifyContent:'center' },
+  pressed: { opacity:0.55 },
 })

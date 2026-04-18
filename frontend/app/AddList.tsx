@@ -1,113 +1,129 @@
 import React, { useState } from 'react'
-import { apiPost } from '@/utils/api'
+import { apiPost } from "@/utils/api"
 import { API_HOUSE_ID } from './apiConfig'
-import { useRouter } from 'expo-router'
 import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  View, Text, TextInput, StyleSheet, Pressable,
+  SafeAreaView, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
-import { BlurView } from 'expo-blur'
-import { AppBottomNav } from '../components/app-bottom-nav'
+import { useRouter } from 'expo-router'
+import { GradientBackground } from './gradientBg'
+import { AppBottomNav } from './AppBottomNav'
+
+type Props = { onBack?:()=>void; onDone?:(data:{listName:string;price:string;date:string})=>void }
 
 const COLORS = {
-  bg: '#F7F3F2',
-  title: '#EC8575',
-  inactive: '#000000',
-  textDark: '#000000',
-  textMuted: '#5E5A58',
-  white: '#FFFFFF',
-  border: 'rgba(255,255,255,0.35)',
-  pink: 'rgba(255,154,139,0.7)',
-  orange: 'rgba(255,174,127,0.7)',
-  yellow: 'rgba(255,218,137,0.7)',
+  cardBg:'rgba(255,255,255,0.84)', inputBg:'rgba(255,243,216,0.40)',
+  active:'#EC8575', doneBtn:'rgba(255,154,139,0.70)',
+  doneText:'rgba(242,232,220,1)', textDark:'#000', textMuted:'#5C5C5C', shadow:'#000',
 }
 
-function Background() {
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-      <View style={[styles.glow, styles.pinkGlow]} />
-      <View style={[styles.glow, styles.orangeGlow]} />
-      <View style={[styles.glow, styles.yellowGlow]} />
-    </View>
-  )
+async function saveList(data:{listName:string;price:string;date:string}){
+  try { const result = await apiPost('/shopping/list',{name:data.listName,house_id:API_HOUSE_ID}); console.log(result) }
+  catch(err) { console.error('Error saving list:',err) }
 }
 
-export default function AddListScreen() {
+export default function AddListScreen({onBack,onDone}:Props) {
   const router = useRouter()
   const [listName, setListName] = useState('')
   const [price, setPrice] = useState('00.00')
   const [date, setDate] = useState('02/27')
+  const [focusedField, setFocusedField] = useState<string|null>(null)
   const [error, setError] = useState('')
 
-  const handleDone = async () => {
-    if (!listName.trim()) {
-      setError('Please enter a name for your list.')
-      return
-    }
+  const handleBack = () => { if(onBack) onBack(); else router.back() }
+
+  const handleDone = () => {
+    if(!listName.trim()){setError('Please enter a name for your list.');return}
     setError('')
-    await apiPost('/shopping/list', { name: listName.trim(), house_id: API_HOUSE_ID })
+    saveList({listName,price,date})
+    onDone?.({listName,price,date})
+    router.back()
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Background />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}><Text style={styles.headerButtonText}>←</Text></TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Add List</Text>
-          <Text style={styles.headerSubtitle}>Create a new shared list</Text>
+    <GradientBackground>
+      <SafeAreaView style={s.safeArea}>
+        <View style={s.page}>
+          <View style={s.topRow}>
+            <Pressable style={({pressed})=>[s.topIconBtn,pressed&&s.pressed]} onPress={handleBack}>
+              <Text style={s.backArrow}>←</Text>
+            </Pressable>
+            <View style={s.titleWrap}><Text style={s.title}>Add List</Text></View>
+            <View style={s.topIconBtn}/>
+          </View>
+
+          <KeyboardAvoidingView style={s.flex} behavior={Platform.OS==='ios'?'padding':'height'}>
+            <ScrollView contentContainerStyle={s.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              <View style={s.rowCard}>
+                <Text style={s.rowLabel}>Name List</Text>
+                <TextInput
+                  style={[s.inputBox,focusedField==='name'&&s.inputBoxFocused]}
+                  placeholder="" placeholderTextColor={COLORS.textMuted}
+                  value={listName} onChangeText={setListName}
+                  onFocus={()=>setFocusedField('name')} onBlur={()=>setFocusedField(null)}
+                  cursorColor={COLORS.active} autoCapitalize="words" returnKeyType="next"
+                />
+              </View>
+
+              <View style={s.rowCard}>
+                <Text style={s.rowLabel}>Add Price</Text>
+                <TextInput
+                  style={[s.smallInputBox,focusedField==='price'&&s.inputBoxFocused,s.coralText]}
+                  placeholder="00.00" placeholderTextColor={COLORS.active}
+                  value={price} onChangeText={setPrice}
+                  onFocus={()=>setFocusedField('price')} onBlur={()=>setFocusedField(null)}
+                  cursorColor={COLORS.active} keyboardType="decimal-pad" returnKeyType="next" textAlign="center"
+                />
+              </View>
+
+              <View style={s.rowCard}>
+                <Text style={s.rowLabel}>Enter Date</Text>
+                <TextInput
+                  style={[s.smallInputBox,focusedField==='date'&&s.inputBoxFocused,s.coralText]}
+                  placeholder="02/27" placeholderTextColor={COLORS.active}
+                  value={date} onChangeText={setDate}
+                  onFocus={()=>setFocusedField('date')} onBlur={()=>setFocusedField(null)}
+                  cursorColor={COLORS.active} keyboardType="numbers-and-punctuation"
+                  returnKeyType="done" onSubmitEditing={handleDone} textAlign="center"
+                />
+              </View>
+
+              {error!==''&&<View style={s.errorBanner}><Text style={s.errorText}>{error}</Text></View>}
+
+              <Pressable style={({pressed})=>[s.doneButton,pressed&&s.btnPressed]} onPress={handleDone}>
+                <Text style={s.doneButtonText}>Done</Text>
+              </Pressable>
+
+              <View style={{height:110}}/>
+            </ScrollView>
+          </KeyboardAvoidingView>
+          <AppBottomNav/>
         </View>
-        <View style={styles.headerSpacer} />
-      </View>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <BlurView intensity={26} tint="light" style={styles.card}>
-          <Text style={styles.sectionLabel}>LIST DETAILS</Text>
-          <View style={styles.inputWrap}>
-            <Text style={styles.inputLabel}>List Name</Text>
-            <TextInput style={styles.input} value={listName} onChangeText={setListName} placeholder="e.g. Grocery List" placeholderTextColor={COLORS.textMuted} />
-          </View>
-          <View style={styles.inputWrap}>
-            <Text style={styles.inputLabel}>Estimated Price</Text>
-            <TextInput style={styles.input} value={price} onChangeText={setPrice} placeholder="0.00" placeholderTextColor={COLORS.textMuted} keyboardType="decimal-pad" />
-          </View>
-          <View style={styles.inputWrap}>
-            <Text style={styles.inputLabel}>Due Date</Text>
-            <TextInput style={styles.input} value={date} onChangeText={setDate} placeholder="MM/DD" placeholderTextColor={COLORS.textMuted} />
-          </View>
-          {!!error && <Text style={styles.errorText}>{error}</Text>}
-        </BlurView>
-        <TouchableOpacity style={styles.primaryButton} onPress={handleDone}><Text style={styles.primaryButtonText}>Create List</Text></TouchableOpacity>
-      </ScrollView>
-      <AppBottomNav />
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   )
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.bg },
-  content: { padding: 16, paddingBottom: 110 },
-  header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  headerButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.3)', borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
-  headerButtonText: { fontSize: 18, color: COLORS.inactive, fontWeight: '700' },
-  headerCenter: { alignItems: 'center' },
-  headerSpacer: { width: 38, height: 38 },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: COLORS.title },
-  headerSubtitle: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
-  card: { borderRadius: 24, overflow: 'hidden', padding: 16, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: COLORS.border },
-  sectionLabel: { fontSize: 11, fontWeight: '700', color: COLORS.title, letterSpacing: 1, marginBottom: 12 },
-  inputWrap: { backgroundColor: 'rgba(255,255,255,0.24)', borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.38)', paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12 },
-  inputLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textMuted, marginBottom: 6 },
-  input: { fontSize: 16, fontWeight: '500', color: COLORS.textDark },
-  errorText: { color: '#A63A2C', fontWeight: '600' },
-  primaryButton: { height: 56, borderRadius: 18, backgroundColor: COLORS.title, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
-  primaryButtonText: { color: COLORS.white, fontSize: 16, fontWeight: '800' },
-  glow: { position: 'absolute', width: 220, height: 220, borderRadius: 110 },
-  pinkGlow: { left: -20, top: 290, backgroundColor: COLORS.pink },
-  orangeGlow: { right: -18, top: 110, backgroundColor: COLORS.orange },
-  yellowGlow: { right: -8, bottom: 150, backgroundColor: COLORS.yellow },
+const s = StyleSheet.create({
+  safeArea:{flex:1,backgroundColor:'transparent'},
+  page:{flex:1,paddingHorizontal:16},
+  flex:{flex:1},
+  topRow:{flexDirection:'row',alignItems:'center',marginTop:10,marginBottom:18,paddingHorizontal:4},
+  topIconBtn:{width:36,height:36,alignItems:'center',justifyContent:'center'},
+  backArrow:{fontSize:22,color:COLORS.textDark,fontWeight:'500'},
+  titleWrap:{flex:1,alignItems:'center'},
+  title:{fontSize:22,fontWeight:'700',color:COLORS.textDark},
+  pressed:{opacity:0.6},
+  scrollContent:{paddingTop:26,paddingBottom:24},
+  rowCard:{width:'100%',minHeight:76,backgroundColor:COLORS.cardBg,borderRadius:18,paddingHorizontal:22,marginBottom:32,flexDirection:'row',alignItems:'center',justifyContent:'space-between',shadowColor:COLORS.shadow,shadowOffset:{width:0,height:3},shadowOpacity:0.10,shadowRadius:6,elevation:3},
+  rowLabel:{fontSize:17,fontWeight:'500',color:COLORS.textDark},
+  inputBox:{width:142,height:50,borderRadius:14,backgroundColor:COLORS.inputBg,fontSize:16,fontWeight:'500',color:COLORS.textDark,paddingHorizontal:14,textAlign:'center'},
+  smallInputBox:{width:142,height:50,borderRadius:14,backgroundColor:COLORS.inputBg,fontSize:16,fontWeight:'500',paddingHorizontal:14,textAlign:'center'},
+  inputBoxFocused:{borderWidth:1,borderColor:'rgba(236,133,117,0.4)'},
+  coralText:{color:COLORS.active},
+  errorBanner:{backgroundColor:'rgba(255,255,255,0.84)',borderRadius:14,paddingHorizontal:14,paddingVertical:12,marginTop:-8,marginBottom:18},
+  errorText:{color:COLORS.active,fontSize:13,fontWeight:'500',textAlign:'center'},
+  doneButton:{alignSelf:'center',marginTop:6,width:136,height:52,borderRadius:16,backgroundColor:COLORS.doneBtn,alignItems:'center',justifyContent:'center',shadowColor:COLORS.shadow,shadowOffset:{width:0,height:4},shadowOpacity:0.12,shadowRadius:6,elevation:3},
+  btnPressed:{backgroundColor:'rgba(200,100,90,0.75)'},
+  doneButtonText:{color:COLORS.doneText,fontWeight:'700',fontSize:16},
 })

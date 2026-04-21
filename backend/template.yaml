@@ -51,6 +51,10 @@ Resources:
       Name: !Sub "${ProjectName}-api"
       Description: "500 lambda functions"
       StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
       # TODO: Add Auth authorization
       # Auth:
       #   DefaultAuthorizer: CognitoAuthorizer
@@ -190,6 +194,7 @@ Resources:
             RestApiId: !Ref HousematesApi
             Path: /expenses/house
             Method: Get
+    Metadata: *lambda-build
 
   GetExpensesOwersFunction:
     Type: AWS::Serverless::Function

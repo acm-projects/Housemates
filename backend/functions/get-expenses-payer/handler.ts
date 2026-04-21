@@ -1,8 +1,4 @@
-import {
-  APIGatewayProxyEvent,
-  APIGatewayProxyResult,
-  Context,
-} from "aws-lambda";
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
@@ -14,14 +10,17 @@ const dc = DynamoDBDocumentClient.from(client);
 export const handler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
-  if (event.body === null) {
+  const qs = event.queryStringParameters;
+  const body = event.body ? JSON.parse(event.body) : {};
+  const house_id = qs?.house_id ?? body.house_id;
+  const user_id = qs?.user_id ?? body.user_id;
+
+  if (!house_id || !user_id) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Body is missing" }),
+      body: JSON.stringify({ error: "house_id and user_id are required" }),
     };
   }
-
-  const { house_id, user_id } = JSON.parse(event.body);
 
   const response = await dc.send(
     new QueryCommand({

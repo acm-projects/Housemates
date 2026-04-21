@@ -1,2 +1,2 @@
-export const API_USER_ID = "demo-user-replace-me"
-export const API_HOUSE_ID = "demo-house-replace-me"
+export const API_USER_ID = "user-001";
+export const API_HOUSE_ID = "house-12345";

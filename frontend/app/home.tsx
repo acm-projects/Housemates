@@ -123,7 +123,7 @@ export default function HomeScreen() {
     setAnnouncementBusy(true)
     try{
       await housematesApi.deleteAnnouncement({house_id:API_HOUSE_ID,announcement_id:item.announcement_id})
-      announcementStore.remove(item.id)
+      announcementStore.remove(announcement => announcement.id === item.id)
     }catch(e){Alert.alert('Delete failed',e instanceof Error?e.message:'Unknown error')}
     finally{setAnnouncementBusy(false)}
   }

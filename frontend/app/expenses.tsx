@@ -6,9 +6,10 @@ import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { GradientBackground } from './gradientBg'
 import { AppBottomNav } from './AppBottomNav'
-import { GlassCard, GLASS_COLORS } from '@/components/glass-ui'
+import { GlassCard } from '@/components/glass-ui'
 import { FONTS, PALETTE } from './fonts'
 
+// Avatar colors
 const AVATAR_BG = ['#c9b8e8','#1a1a3a','#2a1a2e','#e8c4a0']
 function Avatar({size=52,idx=0}:{size?:number;idx?:number}) {
   return (
@@ -20,7 +21,7 @@ function Avatar({size=52,idx=0}:{size?:number;idx?:number}) {
 }
 const av = StyleSheet.create({
   wrap:{alignItems:'center',justifyContent:'flex-end',overflow:'hidden',position:'relative'},
-  head:{backgroundColor:'rgba(255,255,255,0.35)',position:'absolute',top:'18%'},
+  head:{backgroundColor:'rgba(255,255,255,0.35)',position:'absolute',top:'18%' as any},
   body:{backgroundColor:'rgba(255,255,255,0.35)',position:'absolute',bottom:0},
 })
 
@@ -37,10 +38,17 @@ const DATE_GROUPS:DateGroup[]=[
   {date:'February 14, 2026',expenses:[{id:'3',amount:31,description:'Nuclear Bomb!',colorIdx:2},{id:'4',amount:31,description:'Nuclear Bomb!',colorIdx:2}]},
 ]
 
+const FAB_TEXT = '#F2E8DC'
+// Down arrow color for split table negative amounts
+const DOWN_COLOR = '#E0A932'
+
 export default function ExpensesScreen({onBack}:{onBack?:()=>void}) {
-  const router = useRouter()
-  const [busy, setBusy] = React.useState(false)
-  React.useEffect(()=>{ const load=async()=>{setBusy(true);try{await apiGetWithBody('/expenses/house',{house_id:API_HOUSE_ID})}catch{}finally{setBusy(false)}};load() },[])
+  const router=useRouter()
+  const [busy,setBusy]=React.useState(false)
+  React.useEffect(()=>{
+    const load=async()=>{setBusy(true);try{await apiGetWithBody('/expenses/house',{house_id:API_HOUSE_ID})}catch{}finally{setBusy(false)}}
+    load()
+  },[])
 
   return (
     <GradientBackground>
@@ -51,7 +59,7 @@ export default function ExpensesScreen({onBack}:{onBack?:()=>void}) {
           </Pressable>
           <Text style={s.title}>Expenses</Text>
           <Pressable style={({pressed})=>[s.iconBtn,pressed&&s.pressed]}>
-            <Ionicons name="notifications" size={22} color={PALETTE.textDark}/>
+            <Ionicons name="notifications" size={20} color={PALETTE.textDark}/>
             <View style={s.dot}/>
           </Pressable>
         </View>
@@ -59,21 +67,24 @@ export default function ExpensesScreen({onBack}:{onBack?:()=>void}) {
         <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
           {busy&&<ActivityIndicator color={PALETTE.active} style={{marginBottom:8}}/>}
 
-          {/* Split Table — GlassCard */}
+          {/* Split Table */}
           <GlassCard style={s.splitCard}>
             <Text style={s.splitTitle}>Split Table</Text>
             <View style={s.membersRow}>
               {MEMBERS.map((m,i)=>{
                 const pos=m.amount>=0
-                return (
+                // up = active coral, down = gold E0A932
+                const arrowColor = pos ? PALETTE.active : DOWN_COLOR
+                const badgeBg    = pos ? PALETTE.active : DOWN_COLOR
+                return(
                   <View key={m.id} style={s.memberCol}>
                     <View style={s.avatarWrap}>
                       <Avatar size={52} idx={i}/>
-                      <View style={[s.badge,{backgroundColor:pos?PALETTE.active:'#ADB6C4'}]}>
+                      <View style={[s.badge,{backgroundColor:badgeBg}]}>
                         <Text style={s.badgeText}>{pos?'↑':'↓'}</Text>
                       </View>
                     </View>
-                    <Text style={[s.memberAmt,{color:pos?PALETTE.active:'#ADB6C4'}]}>
+                    <Text style={[s.memberAmt,{color:arrowColor}]}>
                       {pos?`+$${m.amount}`:`-$${Math.abs(m.amount)}`}
                     </Text>
                   </View>
@@ -82,7 +93,7 @@ export default function ExpensesScreen({onBack}:{onBack?:()=>void}) {
             </View>
           </GlassCard>
 
-          {/* Expense groups */}
+          {/* Grouped expenses */}
           {DATE_GROUPS.map(group=>(
             <View key={group.date} style={s.dateGroup}>
               <Text style={s.dateHeader}>{group.date}</Text>
@@ -100,11 +111,12 @@ export default function ExpensesScreen({onBack}:{onBack?:()=>void}) {
           <View style={{height:130}}/>
         </ScrollView>
 
-        {/* Rectangular Split Money FAB */}
+        {/* Split Money FAB — rectangular, F2E8DC text & $ sign, no border */}
         <Pressable style={({pressed})=>[s.fab,pressed&&s.fabPressed]} onPress={()=>router.push('/splitMoney')}>
-          <View style={s.fabIcon}><Text style={s.fabIconText}>$</Text></View>
+          <Text style={s.fabDollar}>$</Text>
           <Text style={s.fabText}>Split Money</Text>
         </Pressable>
+
         <AppBottomNav/>
       </SafeAreaView>
     </GradientBackground>
@@ -134,9 +146,9 @@ const s = StyleSheet.create({
   expInfo:    {flex:1},
   expAmt:     {fontSize:16,fontWeight:'700',color:PALETTE.textDark,marginBottom:2,fontFamily:FONTS.titleReg},
   expDesc:    {fontSize:13,color:PALETTE.textMuted,fontFamily:FONTS.body},
-  fab:        {position:'absolute',right:16,bottom:82,flexDirection:'row',alignItems:'center',backgroundColor:'rgba(236,133,117,0.90)',borderRadius:14,paddingVertical:14,paddingHorizontal:20,paddingLeft:12,shadowColor:'#000',shadowOffset:{width:0,height:6},shadowOpacity:0.15,shadowRadius:12,elevation:8},
-  fabIcon:    {width:32,height:32,borderRadius:8,backgroundColor:'rgba(255,255,255,0.35)',alignItems:'center',justifyContent:'center',marginRight:10},
-  fabIconText:{fontSize:18,fontWeight:'800',color:'#fff'},
+  // FAB — rectangular, no icon border, F2E8DC
+  fab:        {position:'absolute',right:16,bottom:82,flexDirection:'row',alignItems:'center',gap:10,backgroundColor:'rgba(236,133,117,0.88)',borderRadius:14,paddingVertical:14,paddingHorizontal:20},
   fabPressed: {backgroundColor:PALETTE.activeDark},
-  fabText:    {fontSize:15,fontWeight:'700',color:'#1a1a1a',fontFamily:FONTS.body},
+  fabDollar:  {fontSize:18,fontWeight:'800',color:FAB_TEXT},
+  fabText:    {fontSize:15,fontWeight:'700',color:FAB_TEXT,fontFamily:FONTS.body},
 })

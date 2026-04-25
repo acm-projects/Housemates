@@ -10,13 +10,17 @@ const dc = DynamoDBDocumentClient.from(client);
 export const handler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
-  if (event.body === null) {
+  const qs = event.queryStringParameters;
+  const body = event.body ? JSON.parse(event.body) : {};
+  const user_id = qs?.user_id ?? body.user_id;
+
+  if (!user_id) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ message: "Body is missing" }),
+      body: JSON.stringify({ message: "user_id is required" }),
     };
   }
-  const { user_id } = JSON.parse(event.body);
+
   const response = await dc.send(
     new QueryCommand({
       TableName: "Chores_HM",

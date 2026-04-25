@@ -10,13 +10,17 @@ const dc = DynamoDBDocumentClient.from(client);
 export const handler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
-  if (event.body === null) {
+  const qs = event.queryStringParameters;
+  const body = event.body ? JSON.parse(event.body) : {};
+  const house_id = qs?.house_id ?? body.house_id;
+  const get_urgent = qs?.get_urgent === "true" || body.get_urgent === true;
+
+  if (!house_id) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ message: "Body is missing" }),
+      body: JSON.stringify({ message: "house_id is required" }),
     };
   }
-  const { house_id, get_urgent } = JSON.parse(event.body);
   let params: any;
   //terrible implementation. If anyone would like to suggest something better I'm all ears
   if (get_urgent) {
@@ -40,6 +44,8 @@ export const handler = async (
       },
     });
   }
+
+  console.log(params);
   const response = await dc.send(params);
 
   console.log(response);

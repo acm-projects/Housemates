@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { CognitoIdentityProviderClient, ConfirmSignUpCommand } from '@aws-sdk/client-cognito-identity-provider'
+import { CognitoUser } from 'amazon-cognito-identity-js'
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -12,10 +12,7 @@ import {
   View,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
-import { AppBottomNav } from '../components/app-bottom-nav'
-
-const CLIENT_ID = '22fiai4ujv7oi54lk6o6btq4vu'
-const cognito = new CognitoIdentityProviderClient({ region: 'us-east-2' })
+import { getUserPool } from '../lib/auth'
 
 const COLORS = {
   bg: '#F7F3F2',
@@ -56,18 +53,25 @@ export default function VerifyScreen() {
     setLoading(true)
     setError('')
     try {
-      await cognito.send(
-        new ConfirmSignUpCommand({
-          ClientId: CLIENT_ID,
-          Username: email,
-          ConfirmationCode: code.trim(),
-        }),
-      )
-      router.replace('/home')
+      const userPool = getUserPool()
+      const userData = {
+        Username: email,
+        Pool: userPool,
+      }
+      const cognitoUser = new CognitoUser(userData)
+      
+      cognitoUser.confirmRegistration(code.trim(), true, (err, result) => {
+        if (err) {
+          setLoading(false)
+          setError(String(err?.message || 'Invalid verification code'))
+        } else {
+          setLoading(false)
+          router.replace('/signin')
+        }
+      })
     } catch (e: any) {
-      setError(String(e?.message || 'Invalid verification code'))
-    } finally {
       setLoading(false)
+      setError(String(e?.message || 'Invalid verification code'))
     }
   }
 
@@ -112,8 +116,6 @@ export default function VerifyScreen() {
           </TouchableOpacity>
         </BlurView>
       </View>
-
-      <AppBottomNav />
     </SafeAreaView>
   )
 }

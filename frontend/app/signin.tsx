@@ -1,10 +1,7 @@
 import * as React from 'react'
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
-import {
-  CognitoIdentityProviderClient,
-  InitiateAuthCommand,
-} from '@aws-sdk/client-cognito-identity-provider'
+import { CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -20,11 +17,7 @@ import {
 } from 'react-native'
 import { GradientBackground } from './gradientBg'
 import { GlassCard, GLASS_COLORS } from '@/components/glass-ui'
-import { AppBottomNav } from '../components/app-bottom-nav'
-
-const REGION = 'us-east-2'
-const CLIENT_ID = '22fiai4ujv7oi54lk6o6btq4vu'
-const cognitoClient = new CognitoIdentityProviderClient({ region: REGION })
+import { getUserPool } from '../lib/auth'
 
 export default function SignInScreen() {
   const router = useRouter()
@@ -44,26 +37,31 @@ export default function SignInScreen() {
     setError('')
 
     try {
-      const command = new InitiateAuthCommand({
-        AuthFlow: 'USER_PASSWORD_AUTH',
-        ClientId: CLIENT_ID,
-        AuthParameters: {
-          USERNAME: email.trim().toLowerCase(),
-          PASSWORD: password,
-        },
+      const userPool = getUserPool()
+      const userData = {
+        Username: email.trim().toLowerCase(),
+        Pool: userPool,
+      }
+      
+      const cognitoUser = new CognitoUser(userData)
+      const authenticationDetails = new AuthenticationDetails({
+        Username: email.trim().toLowerCase(),
+        Password: password,
       })
 
-      const response = await cognitoClient.send(command)
-
-      if (response.AuthenticationResult?.AccessToken) {
-        router.replace('/home')
-      } else {
-        setError('Login failed.')
-      }
+      cognitoUser.authenticateUser(authenticationDetails, {
+        onSuccess: (result) => {
+          setLoading(false)
+          router.replace('/home')
+        },
+        onFailure: (err) => {
+          setLoading(false)
+          setError(String(err?.message || 'Sign in failed'))
+        },
+      })
     } catch (e: any) {
-      setError(String(e?.message || 'Sign in failed'))
-    } finally {
       setLoading(false)
+      setError(String(e?.message || 'Sign in failed'))
     }
   }
 
@@ -132,8 +130,6 @@ export default function SignInScreen() {
             <View style={{ height: 120 }} />
           </ScrollView>
         </KeyboardAvoidingView>
-
-        <AppBottomNav />
       </SafeAreaView>
     </GradientBackground>
   )

@@ -47,7 +47,29 @@ function makeStore<T>(initial: T[]) {
 }
 
 // ── Task Store ───────────────────────────────────────────────────────────────
-const _taskBase = makeStore<Task>([]);
+function getTodayDateKey(): string {
+  const today = new Date();
+  return [today.getFullYear(), `${today.getMonth()+1}`.padStart(2,'0'), `${today.getDate()}`.padStart(2,'0')].join('-');
+}
+
+function getDateKey(daysOffset: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + daysOffset);
+  return [date.getFullYear(), `${date.getMonth()+1}`.padStart(2,'0'), `${date.getDate()}`.padStart(2,'0')].join('-');
+}
+
+const SWATCH = ['#c9b8e8','#f5c6d0','#fde5b0','#b8e0d2','#aed6f1','#f9e0c0'];
+const SEED_TASKS: Task[] = [
+  { id:'t1', title:'Clean Kitchen', note:'Wipe counters & sink', time:'09:00 AM', dateKey:getTodayDateKey(), status:'To-do', color:SWATCH[0], done:false, urgent:false },
+  { id:'t2', title:'Buy Groceries', note:'Milk, eggs, bread', time:'10:30 AM', dateKey:getTodayDateKey(), status:'Urgent', color:SWATCH[1], done:false, urgent:true },
+  { id:'t3', title:'Pay Utilities', note:'Electric & water bills', time:'02:00 PM', dateKey:getTodayDateKey(), status:'Done', color:SWATCH[2], done:true, urgent:false },
+  { id:'t4', title:'Laundry', note:'Wash & dry clothes', time:'03:00 PM', dateKey:getTodayDateKey(), status:'To-do', color:SWATCH[3], done:false, urgent:false },
+  { id:'t5', title:'House Meeting', note:'Discuss expenses', time:'06:00 PM', dateKey:getTodayDateKey(), status:'To-do', color:SWATCH[4], done:false, urgent:false },
+  { id:'t6', title:'Vacuum Living Room', note:'Deep clean', time:'11:00 AM', dateKey:getDateKey(1), status:'To-do', color:SWATCH[5], done:false, urgent:false },
+  { id:'t7', title:'Fix Bathroom Faucet', note:'Water leak', time:'01:00 PM', dateKey:getDateKey(-1), status:'Urgent', color:SWATCH[0], done:false, urgent:true },
+];
+
+const _taskBase = makeStore<Task>(SEED_TASKS);
 export const taskStore = {
   ..._taskBase,
   getTasks: () => _taskBase.getAll(),
@@ -65,8 +87,6 @@ export const taskStore = {
 export const announcementStore = makeStore<Announcement>([]);
 
 // ── Shopping List Store ──────────────────────────────────────────────────────
-const SWATCH = ['#c9b8e8','#f5c6d0','#fde5b0','#b8e0d2','#aed6f1','#f9e0c0'];
-
 const SEED_LISTS: ShoppingList[] = [
   { id:'g1', title:'Grocery List', collapsed:false, items:[
     { id:'1', name:'Tomatoes',  price:'$31.00', checked:false, color:SWATCH[0] },

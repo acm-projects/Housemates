@@ -18,7 +18,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { AppBottomNav } from '../components/app-bottom-nav'
 import { GradientBackground } from './gradientBg';
 import { GlassCard, GLASS_COLORS } from '@/components/glass-ui';
 const REGION = 'us-east-2'
@@ -149,8 +148,6 @@ export default function SignUpScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <AppBottomNav />
     </SafeAreaView>
   </GradientBackground>
   )

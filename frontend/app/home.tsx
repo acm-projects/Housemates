@@ -290,10 +290,9 @@ export default function HomeScreen() {
 
               {/* Announcement cards — each post shows as a card */}
               {announcementFeed.map(item => {
-                // First line = title, rest = subtitle
+                // First line = title
                 const lines = item.message.split('\n').filter(Boolean)
                 const title = lines[0]?.slice(0, 60) ?? item.message.slice(0, 60)
-                const sub   = lines[1]?.slice(0, 60) ?? (lines.length === 1 ? item.message.slice(0, 60) : '')
                 return (
                   <Pressable key={item.id} onLongPress={()=>removeAnnouncement(item)} style={({pressed})=>[pressed&&s.pressed]}>
                     <GlassCard style={s.announceCard}>
@@ -304,7 +303,6 @@ export default function HomeScreen() {
                       {/* Message body */}
                       <View style={s.announceBody}>
                         <Text style={s.announceTitle} numberOfLines={1}>{title}</Text>
-                        {sub ? <Text style={s.announceSub} numberOfLines={1}>{sub}</Text> : null}
                       </View>
                       {/* Date / time on right */}
                       <Text style={s.announceMeta}>{item.dateLabel}{'\n'}{item.time}</Text>

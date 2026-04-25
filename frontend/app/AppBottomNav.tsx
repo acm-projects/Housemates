@@ -40,7 +40,7 @@ const s = StyleSheet.create({
   wrap: { position:'absolute', left:14, right:14, bottom:10 },
   nav: {
     height:64, borderRadius:22,
-    backgroundColor:'rgba(255,255,255,0.55)',
+    backgroundColor:'rgba(255,255,255,0.95)',
     borderWidth:1, borderColor:'rgba(255,255,255,0.7)',
     flexDirection:'row', alignItems:'center', justifyContent:'space-around',
     paddingHorizontal:10,

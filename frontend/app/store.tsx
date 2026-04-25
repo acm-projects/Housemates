@@ -4,6 +4,7 @@ export type Task = {
   color: string; done: boolean; urgent: boolean;
 };
 
+// No seed announcements — starts empty, user posts their own
 export type Announcement = {
   id: string; announcement_id?: string;
   message: string; time: string; dateLabel: string;
@@ -19,29 +20,33 @@ export type ShoppingList = {
   items: ShoppingItem[]; collapsed: boolean;
 };
 
+// ── Generic listener store factory ──────────────────────────────────────────
 function makeStore<T>(initial: T[]) {
   const _items: T[] = [...initial];
   const _listeners: Array<() => void> = [];
   const notify = () => _listeners.forEach(l => l());
   return {
-    getAll: ()    => _items as T[],
-    add:    (item: T) => { _items.unshift(item); notify(); },
-    remove: (pred: (item: T) => boolean) => {
+    getAll:    ()         => _items as T[],
+    add:       (item: T)  => { _items.unshift(item); notify(); },
+    remove:    (pred: (item: T) => boolean) => {
       const i = _items.findIndex(pred);
       if (i >= 0) { _items.splice(i, 1); notify(); }
     },
-    update: (pred: (item: T) => boolean, patch: Partial<T>) => {
+    update:    (pred: (item: T) => boolean, patch: Partial<T>) => {
       const item = _items.find(pred);
       if (item) { Object.assign(item, patch); notify(); }
     },
     subscribe: (listener: () => void) => {
       _listeners.push(listener);
-      return () => { const i = _listeners.indexOf(listener); if (i >= 0) _listeners.splice(i, 1); };
+      return () => {
+        const i = _listeners.indexOf(listener);
+        if (i >= 0) _listeners.splice(i, 1);
+      };
     },
   };
 }
 
-// ── Task Store ──────────────────────────────────────────────────────────────
+// ── Task Store ───────────────────────────────────────────────────────────────
 const _taskBase = makeStore<Task>([]);
 export const taskStore = {
   ..._taskBase,
@@ -50,29 +55,26 @@ export const taskStore = {
   toggleDone: (id: string) => {
     const t = _taskBase.getAll().find(t => t.id === id);
     if (t) _taskBase.update(x => x.id === id, {
-      done: !t.done,
+      done:   !t.done,
       status: !t.done ? 'Done' : t.urgent ? 'Urgent' : 'To-do',
     });
   },
 };
 
-// ── Announcement Store ──────────────────────────────────────────────────────
-const SEED_ANNS: Announcement[] = [
-  { id: 'seed-1', message: 'Welcome to Housemates', time: '9:00 AM', dateLabel: 'Apr 13' },
-];
-export const announcementStore = makeStore<Announcement>(SEED_ANNS);
+// ── Announcement Store — starts EMPTY ───────────────────────────────────────
+export const announcementStore = makeStore<Announcement>([]);
 
-// ── Shopping List Store ─────────────────────────────────────────────────────
+// ── Shopping List Store ──────────────────────────────────────────────────────
 const SWATCH = ['#c9b8e8','#f5c6d0','#fde5b0','#b8e0d2','#aed6f1','#f9e0c0'];
 
 const SEED_LISTS: ShoppingList[] = [
-  { id: 'g1', title: 'Grocery List', collapsed: false, items: [
-    { id: '1', name: 'Tomatoes',  price: '$31.00', checked: false, color: SWATCH[0] },
-    { id: '2', name: 'Milk',      price: '$31.00', checked: false, color: SWATCH[1] },
+  { id:'g1', title:'Grocery List', collapsed:false, items:[
+    { id:'1', name:'Tomatoes',  price:'$31.00', checked:false, color:SWATCH[0] },
+    { id:'2', name:'Milk',      price:'$31.00', checked:false, color:SWATCH[1] },
   ]},
-  { id: 'g2', title: 'Utilities List', collapsed: false, items: [
-    { id: '3', name: 'Water Bill',       price: '$31.00', checked: false, color: SWATCH[2] },
-    { id: '4', name: 'Electricity Bill', price: '$31.00', checked: false, color: SWATCH[3] },
+  { id:'g2', title:'Utilities List', collapsed:false, items:[
+    { id:'3', name:'Water Bill',       price:'$31.00', checked:false, color:SWATCH[2] },
+    { id:'4', name:'Electricity Bill', price:'$31.00', checked:false, color:SWATCH[3] },
   ]},
 ];
 
@@ -83,30 +85,23 @@ const notifyLists = () => _listListeners.forEach(l => l());
 export const shoppingStore = {
   getLists: () => _listBase.getAll(),
 
-  // Called from AddList — adds a new list immediately
   addList: (list: ShoppingList) => {
     _listBase.add(list);
     notifyLists();
   },
 
-  // Merge lists fetched from API (preserves existing items)
   mergeLists: (apiLists: Array<{id:string; title:string; list_id:string}>) => {
     const current = _listBase.getAll();
     const map = new Map(current.map(g => [g.id, g]));
     for (const row of apiLists) {
       if (!row.id) continue;
       const ex = map.get(row.id);
-      if (ex) {
-        ex.title   = row.title;
-        ex.list_id = row.list_id;
-      } else {
-        current.push({ id: row.id, title: row.title, list_id: row.list_id, items: [], collapsed: false });
-      }
+      if (ex) { ex.title = row.title; ex.list_id = row.list_id; }
+      else     { current.push({ id:row.id, title:row.title, list_id:row.list_id, items:[], collapsed:false }); }
     }
     notifyLists();
   },
 
-  // Set items for a specific list (loaded from API)
   setItems: (listId: string, items: ShoppingItem[]) => {
     const list = _listBase.getAll().find(g => g.id === listId);
     if (list) { list.items = items; notifyLists(); }
@@ -140,7 +135,6 @@ export const shoppingStore = {
 
   subscribe: (listener: () => void) => {
     _listListeners.push(listener);
-    // also subscribe to base store changes
     const unsubBase = _listBase.subscribe(listener);
     return () => {
       const i = _listListeners.indexOf(listener);

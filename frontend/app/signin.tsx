@@ -1,7 +1,7 @@
-import * as React from 'react'
-import { useState } from 'react'
-import { useRouter } from 'expo-router'
-import { CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js'
+import * as React from "react";
+import { useState } from "react";
+import { useRouter } from "expo-router";
+import { CognitoUser, AuthenticationDetails } from "amazon-cognito-identity-js";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,54 +14,56 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native'
-import { GradientBackground } from './gradientBg'
-import { GlassCard, GLASS_COLORS } from '@/components/glass-ui'
-import { getUserPool } from '../lib/auth'
+} from "react-native";
+import { GradientBackground } from "./gradientBg";
+import { GlassCard, GLASS_COLORS } from "@/components/glass-ui";
+import { getUserPool } from "../lib/auth";
 
 export default function SignInScreen() {
-  const router = useRouter()
+  const router = useRouter();
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSignIn() {
     if (!email.trim() || !password.trim()) {
-      setError('Please fill out all fields.')
-      return
+      setError("Please fill out all fields.");
+      return;
     }
 
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError("");
 
+    setLoading(false);
+    router.replace("/home");
     try {
-      const userPool = getUserPool()
+      const userPool = getUserPool();
       const userData = {
         Username: email.trim().toLowerCase(),
         Pool: userPool,
-      }
-      
-      const cognitoUser = new CognitoUser(userData)
+      };
+
+      const cognitoUser = new CognitoUser(userData);
       const authenticationDetails = new AuthenticationDetails({
         Username: email.trim().toLowerCase(),
         Password: password,
-      })
+      });
 
       cognitoUser.authenticateUser(authenticationDetails, {
         onSuccess: (result) => {
-          setLoading(false)
-          router.replace('/home')
+          setLoading(false);
+          router.replace("/home");
         },
         onFailure: (err) => {
-          setLoading(false)
-          setError(String(err?.message || 'Sign in failed'))
+          setLoading(false);
+          setError(String(err?.message || "Sign in failed"));
         },
-      })
+      });
     } catch (e: any) {
-      setLoading(false)
-      setError(String(e?.message || 'Sign in failed'))
+      setLoading(false);
+      setError(String(e?.message || "Sign in failed"));
     }
   }
 
@@ -76,7 +78,7 @@ export default function SignInScreen() {
 
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <ScrollView
             contentContainerStyle={styles.content}
@@ -122,7 +124,7 @@ export default function SignInScreen() {
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => router.push('/signUp')}>
+              <TouchableOpacity onPress={() => router.push("/signUp")}>
                 <Text style={styles.link}>Don't have an account? Sign Up</Text>
               </TouchableOpacity>
             </GlassCard>
@@ -132,7 +134,7 @@ export default function SignInScreen() {
         </KeyboardAvoidingView>
       </SafeAreaView>
     </GradientBackground>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -141,7 +143,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   content: {
     padding: 16,
@@ -149,18 +151,18 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
     marginBottom: 10,
   },
   headerTitle: {
     fontSize: 26,
-    fontWeight: '800',
+    fontWeight: "800",
     color: GLASS_COLORS.title,
   },
   title: {
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: "800",
     color: GLASS_COLORS.textDark,
   },
   subtitle: {
@@ -170,7 +172,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     color: GLASS_COLORS.textMuted,
     marginTop: 10,
   },
@@ -178,9 +180,9 @@ const styles = StyleSheet.create({
     marginTop: 6,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: "rgba(255,255,255,0.3)",
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: "rgba(255,255,255,0.4)",
     color: GLASS_COLORS.textDark,
   },
   button: {
@@ -188,22 +190,23 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 14,
     backgroundColor: GLASS_COLORS.title,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonText: {
     color: GLASS_COLORS.white,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   link: {
     marginTop: 14,
-    textAlign: 'center',
+    textAlign: "center",
     color: GLASS_COLORS.title,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   error: {
     marginTop: 8,
-    color: '#A63A2C',
-    fontWeight: '600',
+    color: "#A63A2C",
+    fontWeight: "600",
   },
-})
+});
+

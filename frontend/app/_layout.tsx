@@ -1,59 +1,22 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
 
 import { useColorScheme } from '../hooks/use-color-scheme';
-import { getUserPool } from '../lib/auth';
 
 export const unstable_settings = {
-  anchor: 'signin',
+  initialRouteName: 'signin',
 };
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
-
-  useEffect(() => {
-    // Check if user is already logged in and navigate accordingly
-    const checkAuth = () => {
-      try {
-        const userPool = getUserPool();
-        const user = userPool.getCurrentUser();
-        
-        if (user) {
-          // User is logged in, navigate to home
-          router.replace('/home');
-        } else {
-          // User is not logged in, navigate to signin
-          router.replace('/signin');
-        }
-      } catch (error) {
-        // If any error, go to signin
-        router.replace('/signin');
-      } finally {
-        setIsChecking(false);
-      }
-    };
-    
-    checkAuth();
-  }, [router]);
-
-  if (isChecking) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
-        <ActivityIndicator size="large" color="#EC8575" />
-      </View>
-    );
-  }
 
   return (
     <>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack
+          initialRouteName="signin"
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: 'transparent' },
